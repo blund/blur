@@ -1,6 +1,8 @@
 #define BL_IMPL
 #include "bl.h"
 
+#include "stencil.h"
+
 typedef struct {
   uint8_t *code;
   uint32_t code_size;
@@ -24,18 +26,19 @@ int main() {
   }
 
   // Read in structure
-  add_data adder;
-  adder.code = raw;
-  adder.code_size = footer[1];
-  adder.a_offset  = footer[2];
-  adder.b_offset  = footer[3];
+  stencil_t stencil;
+  stencil.code = raw;
+  stencil.code_size = footer[1];
+  stencil.holes[0]  = footer[2];
+  stencil.holes[1]  = footer[3];
 
+  int arr[3] = {7,8,9};
   // Set sentinel values
-  *(uint32_t*)&(adder.code[adder.a_offset]) = 1;
-  *(uint32_t*)&(adder.code[adder.b_offset]) = 2;
+  *(uint32_t*)&(stencil.code[stencil.holes[0]]) = 3;
+  *(uint32_t*)&(stencil.code[stencil.holes[1]]) = 2;
 
   // Call the modified machine code
-  int (*func)() = (int (*)())adder.code;
+  int (*func)() = (int (*)())stencil.code;
   int result = func();
   printf("Result: %d\n", result);
 
