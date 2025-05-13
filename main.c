@@ -10,7 +10,7 @@ typedef struct {
 
 int main() {
   uint8_t* raw;
-  int file_size = read_file("add.bin", &raw);
+  int file_size = read_file("stencils/mul.bin", &raw);
 
   // Read footer values from memory
   uint32_t *footer = (uint32_t *)(raw + file_size - 16);

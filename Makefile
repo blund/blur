@@ -3,9 +3,17 @@ TCC_BUILD_DIR := build/tcc
 
 TCC := $(TCC_INSTALL_DIR)/bin/tcc
 
+gen: tcc
+	mkdir -p generated
+	$(TCC) -run gen.c
+
+cut: tcc gen
+	mkdir -p stencils
+	$(TCC) -run cut.c
+
 # Run the "compiler"
-run: tcc
-	$(TCC) -run add.c && $(TCC) -run main.c
+run: tcc gen
+	$(TCC) -run main.c
 
 
 # Configure, build, and install TCC
