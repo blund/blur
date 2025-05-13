@@ -48,12 +48,12 @@ int main() {
     return 1;
   }
 
-  // Read out tructure
+  // Read in structure
   add_data adder;
   adder.code = raw;
   adder.code_size = footer[1];
   adder.a_offset  = footer[2];
-  adder.b_offset = footer[3];
+  adder.b_offset  = footer[3];
 
   // Set sentinel values
   *(uint32_t*)&(adder.code[adder.a_offset]) = 1;
