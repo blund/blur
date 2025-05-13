@@ -2,6 +2,7 @@
 #define BL_H
 
 #include <stdint.h>
+#include <stdarg.h>
 
 typedef struct string_builder {
   char* buffer;
