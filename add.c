@@ -5,7 +5,7 @@
 #define BL_IMPL
 #include "bl.h"
 
-// Your target function
+// The add function to be used for a stencil
 int add() {
     int a = 0xfffffff0;
     int b = 0xfffffff1;
@@ -24,7 +24,7 @@ int main() {
 
     int a_offset, b_offset;
 
-    // Search for 0xfffffff0 as a 32-bit value
+    // Search for our sentinel values
     for (size_t i = 0; i < size - 3; ++i) {
       uint32_t *val = (uint32_t *)&func_ptr[i]; // read 4 bytes
       if (*val == 0xfffffff0) {
@@ -38,7 +38,6 @@ int main() {
       }
     }
 
-    // Optionally, write to file
     FILE *f = fopen("add.bin", "wb");
     fwrite(func_ptr, 1, size, f);
 
