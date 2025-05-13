@@ -8,7 +8,7 @@
 int main() {
   build_stencils();
 
-  fori(2) {
+  fori(num_stencils) {
     stencil_t* s = &stencils[i];
     printf("stencil: %s\n", s->name);
     printf("holes: %d\n", s->num_holes);

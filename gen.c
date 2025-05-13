@@ -12,26 +12,34 @@ typedef struct {
   char* code;
 } pre_stencil;
 
-const int num_stencils = 2;
+#define num_stencils 3
 
 const pre_stencil add_pre = {
-  .name = "add",
-  .num_holes = 2,
-  .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a + b; return c;",
+    .name = "add",
+    .num_holes = 2,
+    .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a + b; return c;",
 };
 
-const pre_stencil sub_pre = {
+const pre_stencil mul_pre = {
   .name = "mul",
   .num_holes = 2,
   .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a * b; return c;",
 };
 
 
-pre_stencil pres[2];
+const pre_stencil array_index_pre = {
+  .name = "array_index",
+  .num_holes = 2,
+  .code = "int* a = 0xfffffff1; int b = 0xfffffff0; int c = a[b]; return c;",
+};
+
+
+pre_stencil pres[num_stencils];
 
 int main() {
   pres[0] = add_pre;
-  pres[1] = sub_pre;
+  pres[1] = mul_pre;
+  pres[2] = array_index_pre;
 
   sb = new_builder(1024);
 
@@ -39,7 +47,7 @@ int main() {
   add_to(sb, "#include \"../stencil.h\"\n");
   add_to(sb, "\n");
 
-  fori(2) {
+  fori(num_stencils) {
     pre_stencil pre = pres[i];
   
     // The function (and end function to know its length)
@@ -67,7 +75,7 @@ int main() {
   add_to(fun_list, "void build_stencils() {\n", num_stencils);
 
   
-  fori(2) {
+  fori(num_stencils) {
     pre_stencil pre = pres[i];
 
     add_to(fun_list, "stencils[%d] = (stencil_t){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t.num_holes = %d\n};\n",
