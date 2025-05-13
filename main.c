@@ -1,30 +1,5 @@
-#include <stdio.h>
-#include <stdint.h>
-
 #define BL_IMPL
 #include "bl.h"
-
-/*
-  We want to have a split:
-  - Compile time execution
-  - Runtime compilation/optimization
-  - Storing runtime compilations (real profile guided)
-  - We compile to bytecode at compile time, and allow modifying it
-  - What's hard is having semantics that are useful to optimmize at runtime
-  - Metaprogamming is what is useful. Lisp like
-
-
-  - What is most important is to be able to introspect the language, both at runtime and compile time. We have memory. We have fast CPU's. Let's make use of them in the runtime.
- */
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <sys/mman.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 typedef struct {
   uint8_t *code;

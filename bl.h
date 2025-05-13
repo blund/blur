@@ -12,13 +12,7 @@ float random_float(float min, float max);
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 void _release_assert(const char *assertionExpr,
                     const char *assertionFile,
@@ -31,7 +25,6 @@ void _release_assert(const char *assertionExpr,
 #define bl_assert(expr)							\
   ((expr) ? ((void)0)							\
    : _release_assert(#expr, __FILE__, __LINE__, __extension__ __PRETTY_FUNCTION__))
-
 #define assert bl_assert
 
 int read_file(const char *filename, uint8_t **out) {
