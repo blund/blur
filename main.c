@@ -32,7 +32,6 @@ int main() {
   stencil.holes[0]  = footer[2];
   stencil.holes[1]  = footer[3];
 
-  int arr[3] = {7,8,9};
   // Set sentinel values
   *(uint32_t*)&(stencil.code[stencil.holes[0]]) = 3;
   *(uint32_t*)&(stencil.code[stencil.holes[1]]) = 2;
