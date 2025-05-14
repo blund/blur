@@ -36,7 +36,7 @@ int main() {
     }
 
     string_builder *path_builder = new_builder(1024);
-    add_to(path_builder, "stencils/%s.bin", s->name);
+    add_to(path_builder, "generated/stencils/%s.bin", s->name);
 
     FILE *f = fopen(to_string(path_builder), "wb");
     fwrite(func_ptr, 1, s->code_size, f);

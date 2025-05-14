@@ -9,7 +9,7 @@ run: tcc cut gen
 
 # Cut out stencils
 cut: tcc gen
-	mkdir -p stencils
+	mkdir -p generated/stencils
 	$(TCC) -run cut.c
 
 # Generate stencils

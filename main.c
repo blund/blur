@@ -7,7 +7,7 @@
 
 int main() {
   uint8_t* raw;
-  int file_size = read_file("stencils/array.bin", &raw);
+  int file_size = read_file("generated/stencils/array.bin", &raw);
 
   // Read footer values from memory
   uint32_t *footer = (uint32_t *)(raw + file_size - 24);
@@ -44,7 +44,7 @@ int main() {
 
   {
     hole_t h = stencil.holes[1];
-    uint64_t val = 2;
+    uint64_t val = 0;
     if (h.size == hole_32) {
       *(uint32_t*)&(stencil.code[h.index]) = val;
     } else {
