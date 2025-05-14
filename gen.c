@@ -21,17 +21,17 @@ const pre_stencil add_pre = {
 };
 
 const pre_stencil mul_pre = {
-  .name = "mul",
-  .num_holes = 2,
-  .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a * b; return c;",
+    .name = "mul",
+    .num_holes = 2,
+    .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a * b; return c;",
 };
 
-
-const pre_stencil array_index_pre = {
-  .name = "array_index",
+const pre_stencil array_pre = {
+  .name = "array",
   .num_holes = 2,
-  .code = "int* a = 0xfffffff1; int b = 0xfffffff0; int c = a[b]; return c;",
+  .code = "int *a = 0xfffffffffffffff0; int b = 0xfffffff1; int c = a[b]; return c;",
 };
+
 
 
 pre_stencil pres[num_stencils];
@@ -39,7 +39,7 @@ pre_stencil pres[num_stencils];
 int main() {
   pres[0] = add_pre;
   pres[1] = mul_pre;
-  pres[2] = array_index_pre;
+  pres[2] = array_pre;
 
   sb = new_builder(1024);
 

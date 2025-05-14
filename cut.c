@@ -25,10 +25,13 @@ int main() {
       uint32_t *val = (uint32_t *)&func_ptr[i]; // read 4 bytes
       if (*val == 0xfffffff0) {
         printf("Found sentinel 0xfffffff0 at offset 0x%zx\n", i);
-	s->holes[0] = i;
+	s->holes[0].index = i;
+        if (*(uint64_t *)val == 0xfffffffffffffff0) s->holes[0].size = hole_64;
       } else if (*val == 0xfffffff1) {
 	printf("Found sentinel 0xfffffff1 at offset 0x%zx\n", i);
-	s->holes[1] = i;
+        s->holes[1].index = i;
+	s->holes[1].size = hole_32;
+        if (*(uint64_t *)val == 0xfffffffffffffff1) s->holes[1].size = hole_64;
       }
     }
 
@@ -41,7 +44,7 @@ int main() {
     uint32_t blur_tag = 0x72756C62;
     fwrite(&blur_tag, sizeof(uint32_t), 1, f);
     fwrite(&s->code_size, sizeof(uint32_t), 1, f);
-    fwrite(&s->holes, sizeof(uint32_t), s->num_holes, f);
+    fwrite(&s->holes, sizeof(hole_t), s->num_holes, f);
 
     fclose(f);
   }
