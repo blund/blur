@@ -4,6 +4,7 @@
 
 typedef void (*cps)(uintptr_t);
 typedef void (*cps_int)(uintptr_t, int);
+typedef void (*cps_int_int)(uintptr_t, int, int);
 
 typedef enum {
   hole_32,

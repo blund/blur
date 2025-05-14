@@ -5,6 +5,7 @@
 
 #include "stencil.h"
 
+// Functions used for testing cps functionlaity
 void print_result(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
@@ -15,7 +16,6 @@ void choice_b(uintptr_t stack) { puts("b!"); }
 void patch_hole(stencil_t* s, int index, uint64_t value) {
   {
     hole_t h = s->holes[index];
-    uint64_t val = (uint64_t)print_result;
     if (h.size == hole_32) {
       *(uint32_t*)&(s->code[h.index]) = value;
     } else {
@@ -46,15 +46,13 @@ int main() {
   stencil.num_holes = footer[2];
   memcpy(&stencil.holes, &footer[3], sizeof(hole_t)*4);
 
-
   // Patch the holes!
   uint64_t val1 = (uint64_t)choice_a;
   patch_hole(&stencil, 0, val1);
-
   uint64_t val2 = (uint64_t)choice_b;
   patch_hole(&stencil, 1, val2);
 
-
+  // Initialize our stack (unused)
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
 
