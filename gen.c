@@ -57,11 +57,6 @@ int main() {
     add_to(sb, "}\n");
     add_to(sb, "void %s_end() {};\n", pre.name);
     add_to(sb, "\n");
-
-    // Save its length also
-    add_to(sb, "uint32_t %s_holes = %d;\n", pre.name, pre.num_holes);
-    add_to(sb, "\n");
-
   }
 
   // Build a list of stencils to use for cutting later
