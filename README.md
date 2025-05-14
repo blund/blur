@@ -14,6 +14,15 @@ This is done by pattern matching on the abstract syntax tree of the code, which 
 Another benefit of Copy-and-Patch is that you get portability for free. You can compile the *binary stencils* for any architecture your backend compiler supports. 
 This includes instruction set architechtures (ISAs) and calling conventions. 
 
+## Setup
+To build `blur`, execute the following:
+```
+git submodule update --init
+make run
+```
+This will build the `tcc` compiler from source, and use it to generate stencils and run an example program.
+
+
 ## This work
 So far, a proof of concept stencil generator for addition is implemented, as well as a patching example for this stencil. 
 
