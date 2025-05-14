@@ -2,7 +2,8 @@
 
 #define max_stencil_holes 8
 
-typedef void (*fptr)(void);
+typedef void (*cps)(uintptr_t);
+typedef void (*cps_int)(uintptr_t, int);
 
 typedef enum {
   hole_32,
@@ -21,4 +22,3 @@ typedef struct {
   uint32_t num_holes;
   hole_t holes[max_stencil_holes];
 } stencil_t;
-

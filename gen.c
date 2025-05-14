@@ -9,45 +9,53 @@ string_builder* sb;
 typedef struct {
   char* name;
   int num_holes;
-  char* code;
+  char *code;
+  char *args;
 } pre_stencil;
 
-#define num_stencils 4
+#define num_stencils 2
 
-const pre_stencil add_pre = {
+const char* arg0 = "0xfffffff0";
+const char* arg0_64 = "0xfffffffffffffff0";
+const char* arg1 = "0xfffffff1";
+const char *arg1_64 = "0xfffffffffffffff1";
+const char* arg2 = "0xfffffff2";
+const char *arg2_64 = "0xfffffffffffffff2";
+const char* arg3 = "0xfffffff2";
+const char *arg3_64 = "0xfffffffffffffff2";
+
+pre_stencil add_pre = {
     .name = "add",
     .num_holes = 2,
-    .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a + b; return c;",
+    .args = "uintptr_t stack, int lhs, int rhs",
 };
 
-const pre_stencil mul_pre = {
-    .name = "mul",
+pre_stencil if_pre = {
+    .name = "if_test",
     .num_holes = 2,
-    .code = "int a = 0xfffffff1; int b = 0xfffffff0; int c = a * b; return c;",
+    .args = "uintptr_t stack, int condition",
 };
-
-const pre_stencil array_pre = {
-  .name = "array",
-  .num_holes = 2,
-  .code = "int *a = 0xfffffffffffffff0; int b = 0xfffffff1; int c = a[b]; return c;",
-};
-
-const pre_stencil cps_test = {
-  .name = "cps",
-  .num_holes = 2,
-  .code = "fptr a = (fptr)0xfffffffffffffff0; a(); return 0;",
-};
-
 
 
 
 pre_stencil pres[num_stencils];
 
 int main() {
+ 
+  string_builder *sb = new_builder(64);
+  add_to(sb, "int result = lhs + rhs; ");
+  add_to(sb, "((cps_int)(%s))(stack, result);\n", arg0_64);
+  add_pre.code = to_string(sb);
+
+  sb = new_builder(64);
+  add_to(sb, "if (condition) { ((cps)(%s))(stack); } else { ((cps)(%s))(stack); }", arg0_64, arg1_64);
+  if_pre.code = to_string(sb);
+
+
   pres[0] = add_pre;
-  pres[1] = mul_pre;
-  pres[2] = array_pre;
-  pres[3] = cps_test;
+  pres[1] = if_pre;
+  // pres[2] = array_pre;
+  // pres[3] = cps_test;
 
   sb = new_builder(1024);
 
@@ -60,7 +68,7 @@ int main() {
   
     // The function (and end function to know its length)
     add_to(sb, "// Stencil generator for %s \n", pre.name);
-    add_to(sb, "int %s() {\n", pre.name);
+    add_to(sb, "void %s(%s) {\n", pre.name, pre.args);
     add_to(sb, "\t%s\n", pre.code);
     add_to(sb, "}\n");
     add_to(sb, "void %s_end() {};\n", pre.name);
