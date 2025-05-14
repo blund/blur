@@ -2,6 +2,8 @@
 
 #define max_stencil_holes 8
 
+typedef void (*fptr)(void);
+
 typedef enum {
   hole_32,
   hole_64,

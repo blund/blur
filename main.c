@@ -5,12 +5,16 @@
 
 #include "stencil.h"
 
+void test() {
+  printf("epic\n");
+}
+
 int main() {
   uint8_t* raw;
-  int file_size = read_file("generated/stencils/array.bin", &raw);
+  int file_size = read_file("generated/stencils/cps.bin", &raw);
 
   // Read footer values from memory
-  uint32_t *footer = (uint32_t *)(raw + file_size - 24);
+  uint32_t *footer = (uint32_t *)(raw + file_size - (8*sizeof(hole_t) + 4 + 4));
 
   // Verify footer
   uint32_t blur_tag = footer[0];
@@ -34,14 +38,14 @@ int main() {
   // Path array addr (64 bit) and index (32 bit)
   {
     hole_t h = stencil.holes[0];
-    uint64_t val = (uint64_t)array;
+    uint64_t val = (uint64_t)test;
     if (h.size == hole_32) {
       *(uint32_t*)&(stencil.code[h.index]) = val;
     } else {
       *(uint64_t*)&(stencil.code[h.index]) = val;
     }
   }
-
+  /*
   {
     hole_t h = stencil.holes[1];
     uint64_t val = 0;
@@ -51,9 +55,9 @@ int main() {
       *(uint64_t*)&(stencil.code[h.index]) = val;
     }
   }
+  */
   
 
-  puts("bim");
   // Call the modified machine code
   int (*func)() = (int (*)())stencil.code;
   int result = func();

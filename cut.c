@@ -44,7 +44,7 @@ int main() {
     uint32_t blur_tag = 0x72756C62;
     fwrite(&blur_tag, sizeof(uint32_t), 1, f);
     fwrite(&s->code_size, sizeof(uint32_t), 1, f);
-    fwrite(&s->holes, sizeof(hole_t), s->num_holes, f);
+    fwrite(&s->holes, sizeof(hole_t), 8, f);
 
     fclose(f);
   }

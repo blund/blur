@@ -12,7 +12,7 @@ typedef struct {
   char* code;
 } pre_stencil;
 
-#define num_stencils 3
+#define num_stencils 4
 
 const pre_stencil add_pre = {
     .name = "add",
@@ -32,6 +32,13 @@ const pre_stencil array_pre = {
   .code = "int *a = 0xfffffffffffffff0; int b = 0xfffffff1; int c = a[b]; return c;",
 };
 
+const pre_stencil cps_test = {
+  .name = "cps",
+  .num_holes = 2,
+  .code = "fptr a = (fptr)0xfffffffffffffff0; a(); return 0;",
+};
+
+
 
 
 pre_stencil pres[num_stencils];
@@ -40,6 +47,7 @@ int main() {
   pres[0] = add_pre;
   pres[1] = mul_pre;
   pres[2] = array_pre;
+  pres[3] = cps_test;
 
   sb = new_builder(1024);
 
