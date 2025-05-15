@@ -18,7 +18,7 @@ void free_builder(StringBuilder* b);
 char* to_string(StringBuilder* b);
 
 
-int read_file(const char* filename, uint8_t** data);
+int read_file(const char* filename, char** data);
 void _release_assert(const char *assertionExpr, const char *assertionFile,
                     unsigned int assertionLine, const char *assertionFunction);
 float random_float(float min, float max);
@@ -29,7 +29,12 @@ float random_float(float min, float max);
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
+#include <stdint.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/stat.h>
+
+
 
 void _release_assert(const char *assertionExpr,
                     const char *assertionFile,
@@ -44,34 +49,46 @@ void _release_assert(const char *assertionExpr,
    : _release_assert(#expr, __FILE__, __LINE__, __extension__ __PRETTY_FUNCTION__))
 #define assert bl_assert
 
-int read_file(const char *filename, uint8_t **out) {
-    // Open the file containing the machine code
-    FILE *f = fopen(filename, "rb");
-    if (!f) {
-        perror("fopen");
-        return 1;
+int read_file(const char* filename, char** out) {
+    size_t size;
+    char* data = 0;
+
+    struct stat st;
+    if (stat(filename, &st) != 0)
+    {
+        fprintf(stderr, "Failed to access file '%s' for file size, errno = %d (%s)\n",
+                filename, errno, strerror(errno));
+        abort();
+    }
+    size = (size_t)(st.st_size);
+
+    data = (char *)malloc(sizeof(char) * size + 1);
+
+    // Make sure we terminate this scary C string :)
+    data[size] = '\0';
+
+    FILE* fp = fopen(filename, "r");
+    if (fp == 0)
+    {
+        fprintf(stderr, "Failed to open file '%s' for read, errno = %d (%s)\n",
+                filename, errno, strerror(errno));
+        abort();
     }
 
-    // Get file size
-    fseek(f, 0, SEEK_END);
-    size_t file_size = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    size_t bytesRead = fread(data, sizeof(char), size, fp);
+    assert(bytesRead == size);
 
-    // Allocate a buffer with RWX permissions (on Linux)
-    void *raw = mmap(NULL, file_size, PROT_READ | PROT_WRITE | PROT_EXEC,
-                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (raw == MAP_FAILED) {
-        perror("mmap");
-        return 1;
+    {
+        // just to sanity check we have reached eof
+        uint8_t _c;
+        assert(fread(&_c, sizeof(uint8_t), 1 /*numElements*/, fp) == 0);
+        assert(feof(fp));
     }
 
-    // Read code into memory
-    fread(raw, 1, file_size, f);
-    fclose(f);
+    fclose(fp);
 
-    *out = raw;
-
-    return file_size;
+    *out = data;
+    return size;
 }
 
 float random_float(float min, float max) {
