@@ -1,4 +1,5 @@
-#include "string.h"
+#include <string.h>
+#include <sys/mman.h>
 
 #define BL_IMPL
 #include "bl.h"
@@ -25,8 +26,8 @@ void patch_hole(Stencil* s, int index, uint64_t value) {
 }
 
 typedef struct {
-  void *memory;
-  int write_index;
+  uint8_t *code;
+  int write_head;
   int capacity;
 } ExecutableMemory;
 
@@ -41,11 +42,16 @@ ExecutableMemory make_executable_memory() {
     return m;
   }
 
-  m.memory = memory;
-  m.write_index = 0;
+  m.code = memory;
+  m.write_head = 0;
   m.capacity = 1024;
 
   return m;
+}
+
+void copy_stencil(ExecutableMemory *em, Stencil *s) {
+  memcpy(&em->code[em->write_head], s->code, s->code_size);
+  em->write_head+=s->code_size;
 }
 
 int main() {
@@ -77,13 +83,15 @@ int main() {
   patch_hole(&stencil, 1, val2);
 
   ExecutableMemory em = make_executable_memory();
+  copy_stencil(&em, &stencil);
+
   
   // Initialize our stack (unused)
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
 
   // Call the modified machine code
-  cps_int func = (cps_int)stencil.code;
+  cps_int func = (cps_int)em.code;
   func(stack, 0);
 
   // Clean up
