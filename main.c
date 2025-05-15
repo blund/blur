@@ -33,20 +33,18 @@ typedef struct {
 
 ExecutableMemory make_executable_memory() {
   // Allocate a buffer with RWX permissions (on Linux)
-  void *memory = mmap(NULL, 1024, PROT_READ | PROT_WRITE | PROT_EXEC,
+  ExecutableMemory em = {(void*)-1, 0, 4096*8};
+
+  void *memory = mmap(NULL, em.capacity, PROT_READ | PROT_WRITE | PROT_EXEC,
                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-  ExecutableMemory m = {(void*)-1, -1, -1};
   if (memory == MAP_FAILED) {
     perror("mmap");
-    return m;
+    return em;
   }
 
-  m.code = memory;
-  m.write_head = 0;
-  m.capacity = 1024;
-
-  return m;
+  em.code = memory;
+  return em;
 }
 
 void copy_stencil(ExecutableMemory *em, Stencil *s) {
@@ -55,7 +53,7 @@ void copy_stencil(ExecutableMemory *em, Stencil *s) {
 }
 
 int main() {
-  uint8_t* raw;
+  char* raw;
   int file_size = read_file("generated/stencils/if_test.bin", &raw);
 
   // Read footer values from memory
@@ -71,7 +69,7 @@ int main() {
 
   // Read in structure
   Stencil stencil;
-  stencil.code = raw;
+  stencil.code = (uint8_t*)raw;
   stencil.code_size = footer[1];
   stencil.num_holes = footer[2];
   memcpy(&stencil.holes, &footer[3], sizeof(Hole)*4);
@@ -95,6 +93,8 @@ int main() {
   func(stack, 0);
 
   // Clean up
-  munmap(raw, file_size);
+  free(raw);
+  munmap(em.code, em.capacity);
+
   return 0;
 }
