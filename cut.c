@@ -26,6 +26,7 @@ int main() {
       if (*val == 0xfffffff0) {
         printf("Found sentinel 0xfffffff0 at offset 0x%zx\n", i);
 	s->holes[0].index = i;
+	s->holes[0].size = hole_32;
         if (*(uint64_t *)val == 0xfffffffffffffff0) s->holes[0].size = hole_64;
       } else if (*val == 0xfffffff1) {
 	printf("Found sentinel 0xfffffff1 at offset 0x%zx\n", i);

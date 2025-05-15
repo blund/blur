@@ -1,5 +1,4 @@
 
-
 #define BL_STRINGBUILDER_IMPL
 #define BL_IMPL
 #include "bl.h"
@@ -13,15 +12,15 @@ typedef struct {
   char *args;
 } PreStencil;
 
-#define num_stencils 2
+#define num_stencils 3
 
-const char* arg0 = "0xfffffff0";
+const char* arg0    = "0xfffffff0";
 const char* arg0_64 = "0xfffffffffffffff0";
-const char* arg1 = "0xfffffff1";
+const char* arg1    = "0xfffffff1";
 const char *arg1_64 = "0xfffffffffffffff1";
-const char* arg2 = "0xfffffff2";
+const char* arg2    = "0xfffffff2";
 const char *arg2_64 = "0xfffffffffffffff2";
-const char* arg3 = "0xfffffff2";
+const char* arg3    = "0xfffffff2";
 const char *arg3_64 = "0xfffffffffffffff2";
 
 PreStencil add_pre = {
@@ -30,36 +29,46 @@ PreStencil add_pre = {
     .args = "uintptr_t stack, int lhs, int rhs",
 };
 
+PreStencil add_const_pre = {
+    .name = "add_const",
+    .num_holes = 2,
+    .args = "uintptr_t stack, int lhs",
+};
+
 PreStencil if_pre = {
     .name = "if_test",
     .num_holes = 2,
     .args = "uintptr_t stack, int condition",
 };
 
-
-
 PreStencil pres[num_stencils];
 
+
 int main() {
-
-
   StringBuilder *sb;
+
   // Build function for add
   sb = new_builder(64);
   add_to(sb, "int result = lhs + rhs; ");
-  add_to(sb, "((cps_int)(%s))(stack, result);\n", arg0_64);
+  add_to(sb, "((cps_int)(%s))(stack, result);", arg0_64);
   add_pre.code = to_string(sb);
 
-  // Build function for if
+  // Build function for add_const
+  sb = new_builder(64);
+  add_to(sb, "int a = %s; ", arg0);
+  add_to(sb, "int result = lhs + a; ", arg0);
+  add_to(sb, "((cps_int)(%s))(stack, result);", arg1_64);
+  add_const_pre.code = to_string(sb);
+
+  // Build function for if_test
   sb = new_builder(64);
   add_to(sb, "if (condition) { ((cps)(%s))(stack); } else { ((cps)(%s))(stack); }", arg0_64, arg1_64);
   if_pre.code = to_string(sb);
 
 
   pres[0] = add_pre;
-  pres[1] = if_pre;
-  // pres[2] = array_pre;
-  // pres[3] = cps_test;
+  pres[1] = add_const_pre;
+  pres[2] = if_pre;
 
   sb = new_builder(1024);
 

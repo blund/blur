@@ -45,13 +45,13 @@ Stencil read_stencil(char* file_path) {
 }
 
 // Patch a hole in a stencil
-void patch_hole(Stencil* s, int index, uint64_t value) {
+void patch_hole(uint8_t* code, Stencil* s, int index, uint64_t value) {
   {
     Hole h = s->holes[index];
     if (h.size == hole_32) {
-      *(uint32_t*)&(s->code[h.index]) = value;
+      *(uint32_t*)&(code[h.index]) = value;
     } else {
-      *(uint64_t*)&(s->code[h.index]) = value;
+      *(uint64_t*)&(code[h.index]) = value;
     }
   }
 }
@@ -72,24 +72,32 @@ ExecutableMemory make_executable_memory() {
   return em;
 }
 
-void copy_stencil(ExecutableMemory *em, Stencil *s) {
+uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   memcpy(&em->code[em->write_head], s->code, s->code_size);
-  em->write_head+=s->code_size;
+  uint8_t* location = &em->code[em->write_head];
+  em->write_head += s->code_size;
+  return location;
 }
 
 
 int main() {
-  Stencil stencil = read_stencil("generated/stencils/if_test.bin");
-
-  // Patch the holes!
-  uint64_t val1 = (uint64_t)choice_a;
-  patch_hole(&stencil, 0, val1);
-  uint64_t val2 = (uint64_t)choice_b;
-  patch_hole(&stencil, 1, val2);
+  Stencil if_stencil = read_stencil("generated/stencils/if_test.bin");
+  Stencil add_stencil = read_stencil("generated/stencils/add_const.bin");
 
   ExecutableMemory em = make_executable_memory();
-  copy_stencil(&em, &stencil);
+  uint8_t *if_loc   = copy_stencil(&em, &if_stencil);
+  uint8_t* add1_loc = copy_stencil(&em, &add_stencil);
+  uint8_t* add2_loc = copy_stencil(&em, &add_stencil);
 
+  // Patch the holes!
+  patch_hole(add1_loc, &add_stencil, 0, 4);
+  patch_hole(add1_loc, &add_stencil, 1, (uint64_t)print_result);
+
+  patch_hole(add2_loc, &add_stencil, 0, 30);
+  patch_hole(add2_loc, &add_stencil, 1, (uint64_t)print_result);
+
+  patch_hole(if_loc, &if_stencil, 0, (uint64_t)add1_loc);
+  patch_hole(if_loc, &if_stencil, 1, (uint64_t)add2_loc);
   
   // Initialize our stack (unused)
   int stack_[1024];
@@ -97,10 +105,10 @@ int main() {
 
   // Call the modified machine code
   cps_int func = (cps_int)em.code;
-  func(stack, 0);
+  func(stack, 1);
 
   // Clean up
-  free(stencil.code);
+  // free(stencil.code);
   munmap(em.code, em.capacity);
 
   return 0;
