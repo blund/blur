@@ -2,14 +2,14 @@
 #include "generated/stencils.h"
 
 #define BL_IMPL
-#define BL_STRING_BUILDER_IMPL
+#define BL_STRINGBUILDER_IMPL
 #include "bl.h"
 
 int main() {
   build_stencils();
 
   fori(num_stencils) {
-    stencil_t* s = &stencils[i];
+    Stencil* s = &stencils[i];
     printf("stencil: %s\n", s->name);
     printf("holes: %d\n", s->num_holes);
 
@@ -35,7 +35,7 @@ int main() {
       }
     }
 
-    string_builder *path_builder = new_builder(1024);
+    StringBuilder *path_builder = new_builder(1024);
     add_to(path_builder, "generated/stencils/%s.bin", s->name);
 
     FILE *f = fopen(to_string(path_builder), "wb");
@@ -45,7 +45,7 @@ int main() {
     fwrite(&blur_tag, sizeof(uint32_t), 1, f);
     fwrite(&s->code_size, sizeof(uint32_t), 1, f);
     fwrite(&s->num_holes, sizeof(uint32_t), 1, f);
-    fwrite(&s->holes, sizeof(hole_t), 8, f);
+    fwrite(&s->holes, sizeof(Hole), 8, f);
 
     fclose(f);
   }

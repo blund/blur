@@ -9,17 +9,17 @@ typedef void (*cps_int_int)(uintptr_t, int, int);
 typedef enum {
   hole_32,
   hole_64,
-} hole_size;
+} HoleSize;
 
 typedef struct {
-  hole_size size;
+  HoleSize size;
   uint32_t index;
-} hole_t;
+} Hole;
 
 typedef struct {
   const char* name;
   uint8_t *code;
   uint32_t code_size;
   uint32_t num_holes;
-  hole_t holes[max_stencil_holes];
-} stencil_t;
+  Hole holes[max_stencil_holes];
+} Stencil;

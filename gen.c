@@ -1,17 +1,17 @@
 
 
-#define BL_STRING_BUILDER_IMPL
+#define BL_STRINGBUILDER_IMPL
 #define BL_IMPL
 #include "bl.h"
 
-string_builder* sb;
+StringBuilder* sb;
 
 typedef struct {
   char* name;
   int num_holes;
   char *code;
   char *args;
-} pre_stencil;
+} PreStencil;
 
 #define num_stencils 2
 
@@ -24,13 +24,13 @@ const char *arg2_64 = "0xfffffffffffffff2";
 const char* arg3 = "0xfffffff2";
 const char *arg3_64 = "0xfffffffffffffff2";
 
-pre_stencil add_pre = {
+PreStencil add_pre = {
     .name = "add",
     .num_holes = 2,
     .args = "uintptr_t stack, int lhs, int rhs",
 };
 
-pre_stencil if_pre = {
+PreStencil if_pre = {
     .name = "if_test",
     .num_holes = 2,
     .args = "uintptr_t stack, int condition",
@@ -38,15 +38,19 @@ pre_stencil if_pre = {
 
 
 
-pre_stencil pres[num_stencils];
+PreStencil pres[num_stencils];
 
 int main() {
- 
-  string_builder *sb = new_builder(64);
+
+
+  StringBuilder *sb;
+  // Build function for add
+  sb = new_builder(64);
   add_to(sb, "int result = lhs + rhs; ");
   add_to(sb, "((cps_int)(%s))(stack, result);\n", arg0_64);
   add_pre.code = to_string(sb);
 
+  // Build function for if
   sb = new_builder(64);
   add_to(sb, "if (condition) { ((cps)(%s))(stack); } else { ((cps)(%s))(stack); }", arg0_64, arg1_64);
   if_pre.code = to_string(sb);
@@ -64,7 +68,7 @@ int main() {
   add_to(sb, "\n");
 
   fori(num_stencils) {
-    pre_stencil pre = pres[i];
+    PreStencil pre = pres[i];
   
     // The function (and end function to know its length)
     add_to(sb, "// Stencil generator for %s \n", pre.name);
@@ -76,20 +80,20 @@ int main() {
   }
 
   // Build a list of stencils to use for cutting later
-  string_builder *fun_list = new_builder(128);
+  StringBuilder *fun_list = new_builder(128);
   add_to(fun_list, "// Here we construct a list of our generated stencils that we\n");
   add_to(fun_list, "// will operate on later\n");
   add_to(fun_list, "int num_stencils = %d;\n", num_stencils);
-  add_to(fun_list, "stencil_t stencils[%d];\n", num_stencils);
+  add_to(fun_list, "Stencil stencils[%d];\n", num_stencils);
   add_to(sb, "\n");
   
   add_to(fun_list, "void build_stencils() {\n", num_stencils);
 
   
   fori(num_stencils) {
-    pre_stencil pre = pres[i];
+    PreStencil pre = pres[i];
 
-    add_to(fun_list, "stencils[%d] = (stencil_t){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t.num_holes = %d\n};\n",
+    add_to(fun_list, "stencils[%d] = (Stencil){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t.num_holes = %d\n};\n",
 	   i, pre.name, pre.name, pre.name, pre.name, pre.num_holes);
   }
   add_to(fun_list, "};\n");

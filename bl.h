@@ -4,18 +4,18 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-typedef struct string_builder {
+typedef struct StringBuilder {
   char* buffer;
   int   capacity;
   int   index;
-} string_builder;
+} StringBuilder;
 
 // Forward declare functions
-string_builder* new_builder(int capacity);
-void add_to(string_builder* b, char* format, ...);
-void reset(string_builder* b);
-void free_builder(string_builder* b);
-char* to_string(string_builder* b);
+StringBuilder* new_builder(int capacity);
+void add_to(StringBuilder* b, char* format, ...);
+void reset(StringBuilder* b);
+void free_builder(StringBuilder* b);
+char* to_string(StringBuilder* b);
 
 
 int read_file(const char* filename, uint8_t** data);
@@ -82,21 +82,21 @@ float random_float(float min, float max) {
 // Declare functions if ..._IMPLEMENTATION is defined in source file
 #endif
 
-#ifdef BL_STRING_BUILDER_IMPL
-string_builder* new_builder(int capacity) {
-  string_builder* b = (string_builder*)malloc(sizeof(string_builder));
+#ifdef BL_STRINGBUILDER_IMPL
+StringBuilder* new_builder(int capacity) {
+  StringBuilder* b = (StringBuilder*)malloc(sizeof(StringBuilder));
   b->buffer   = (char*)malloc(capacity); b->capacity = capacity;
   b->index    = 0;
 
   return b;
 }
 
-void free_builder(string_builder* b) {
+void free_builder(StringBuilder* b) {
   free(b->buffer);
   free(b);
 }
 
-void add_to(string_builder* b, char* format, ...) {
+void add_to(StringBuilder* b, char* format, ...) {
   // Try writing to the buffer
   // If expected written characters exceed the buffer capacity, grow it and try again
   for (;;) {
@@ -118,11 +118,11 @@ void add_to(string_builder* b, char* format, ...) {
   }
 }
 
-void reset(string_builder* b) {
+void reset(StringBuilder* b) {
   b->index = 0;
 }
 
-char* to_string(string_builder* b) {
+char* to_string(StringBuilder* b) {
   b->buffer[b->index] = 0;
   return b->buffer;
 }
