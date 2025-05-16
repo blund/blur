@@ -3,3 +3,6 @@
 !/external/tcc/.git
 compile_commands.json
 generated
+a.out
+cut
+gen
