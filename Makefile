@@ -1,46 +1,34 @@
-TCC_SRC_DIR := dependencies/tinycc
-TCC_BUILD_DIR := build/tcc
-
-TCC := $(TCC_BUILD_DIR)/bin/tcc
-
 .PHONY: cut gen
 
 # Run our actual "compiler"
-run: tcc cut gen
-	$(TCC) -run main.c
+run: cut gen
+	gcc main.c -o blur
+	@./blur
 
 # Cut out stencils
 cut:
-	mkdir -p generated/stencils
+	@mkdir -p generated/stencils
 	gcc -O2 -fno-toplevel-reorder -fno-align-functions cut.c -o cut
-	./cut
+	@./cut
 
 # Generate stencils
 gen:
-	mkdir -p generated
-	$(TCC) -run gen.c
-
-# Build script and helper for tcc
-tcc: $(TCC_BUILD_DIR)/bin/tcc
-
-$(TCC_BUILD_DIR)/bin/tcc:
-	@mkdir -p $(TCC_BUILD_DIR)
-	cd $(TCC_SRC_DIR) && ./configure --prefix="$(abspath $(TCC_BUILD_DIR))"
-	make -C $(TCC_SRC_DIR)
-	make -C $(TCC_SRC_DIR) install
-
+	@mkdir -p generated
+	gcc gen.c
 
 # Cleanup scripts :)
-.PHONY: clean clean-tcc clean-gen clean-cut
-clean: clean-tcc clean-gen clean-cut
+.PHONY: clean clean-blur clean-gen clean-cut
+clean: clean-gen clean-cut
 
-clean-tcc:
-	rm -rf $(TCC_BUILD_DIR)
+clean-blur:
+	rm blur
 
 clean-gen:
 	rm -rf generated
+	rm gen
 
 clean-cut:
 	rm -rf stencils
+	rm cut
 
 
