@@ -14,14 +14,11 @@ typedef struct {
 
 #define num_stencils 3
 
-const char* arg0    = "0xfffffff0";
-const char* arg0_64 = "0xfffffffffffffff0";
-const char* arg1    = "0xfffffff1";
-const char *arg1_64 = "0xfffffffffffffff1";
-const char* arg2    = "0xfffffff2";
-const char *arg2_64 = "0xfffffffffffffff2";
-const char* arg3    = "0xfffffff2";
-const char *arg3_64 = "0xfffffffffffffff2";
+const char* arg0    = "0x0fefefe0";
+const char* arg0_64 = "0x0fefefef0fefefe0";
+const char* arg1    = "0x0fefefe1";
+const char* arg1_64 = "0x0fefefef0fefefe1";
+
 
 PreStencil add_pre = {
     .name = "add",
@@ -55,8 +52,7 @@ int main() {
 
   // Build function for add_const
   sb = new_builder(64);
-  add_to(sb, "int a = %s; ", arg0);
-  add_to(sb, "int result = lhs + a; ", arg0);
+  add_to(sb, "int result = lhs + %s; ", arg0);
   add_to(sb, "((cps_int)(%s))(stack, result);", arg1_64);
   add_const_pre.code = to_string(sb);
 
@@ -64,7 +60,6 @@ int main() {
   sb = new_builder(64);
   add_to(sb, "if (condition) { ((cps)(%s))(stack); } else { ((cps)(%s))(stack); }", arg0_64, arg1_64);
   if_pre.code = to_string(sb);
-
 
   pres[0] = add_pre;
   pres[1] = add_const_pre;

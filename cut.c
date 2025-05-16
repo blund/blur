@@ -23,16 +23,16 @@ int main() {
     // @TODO - error handling here
     for (size_t i = 0; i < s->code_size - 3; ++i) { 
       uint32_t *val = (uint32_t *)&func_ptr[i]; // read 4 bytes
-      if (*val == 0xfffffff0) {
-        printf("Found sentinel 0xfffffff0 at offset 0x%zx\n", i);
+      if (*val == 0x0fefefe0) {
+        printf("Found sentinel 0x0fefefe0 at offset 0x%zx\n", i);
 	s->holes[0].index = i;
 	s->holes[0].size = hole_32;
-        if (*(uint64_t *)val == 0xfffffffffffffff0) s->holes[0].size = hole_64;
-      } else if (*val == 0xfffffff1) {
-	printf("Found sentinel 0xfffffff1 at offset 0x%zx\n", i);
+        if (*(uint64_t *)val == 0x0fefefef0fefefe0) s->holes[0].size = hole_64;
+      } else if (*val == 0x0fefefe1) {
+	printf("Found sentinel 0x0fefefe1 at offset 0x%zx\n", i);
         s->holes[1].index = i;
 	s->holes[1].size = hole_32;
-        if (*(uint64_t *)val == 0xfffffffffffffff1) s->holes[1].size = hole_64;
+        if (*(uint64_t *)val == 0x0fefefef0fefefe1) s->holes[1].size = hole_64;
       }
     }
 

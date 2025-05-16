@@ -8,15 +8,15 @@ run: tcc cut gen
 	$(TCC) -run main.c
 
 # Cut out stencils
-cut: tcc gen
+cut: gen
 	mkdir -p generated/stencils
-	$(TCC) -run cut.c
+	gcc -O2 -fno-toplevel-reorder cut.c -o cut
+	./cut
 
 # Generate stencils
 gen: tcc
 	mkdir -p generated
 	$(TCC) -run gen.c
-
 
 # Build script and helper for tcc
 tcc: $(TCC_BUILD_DIR)/bin/tcc
