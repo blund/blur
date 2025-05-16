@@ -8,7 +8,7 @@ run: cut
 # Cut out stencils
 cut: gen
 	@mkdir -p generated/stencils
-	gcc -O2 -fno-toplevel-reorder -fno-align-functions cut.c -o cut
+	gcc -O2 -fno-toplevel-reorder -fno-align-labels -fno-align-functions cut.c -o cut
 	@./cut
 
 # Generate stencils
