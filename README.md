@@ -3,7 +3,7 @@ This project is an attempt to implement a copy-and-patch compiler.
 This is a compilation technique described by Haoran Xu and Fredrik Kjolstad in their [Copy-and-Patch Compilation](https://arxiv.org/abs/2011.13127) paper, 
 and further explored in the wonderful [Deegen JIT VM generator](https://arxiv.org/abs/2411.11469) paper.
 
-The motiviation behind this work is to try to explore their technique and implement a small and fast copy-and-patch compiler using [tcc](https://bellard.org/tcc/) as a backend.
+The motiviation behind this work is to explore their technique and implement a small copy-and-patch compiler in C using [tcc](https://bellard.org/tcc/) as a backend.
 
 ## Copy-and-Patch
 Copy-and-Patch Compilation is a compiler technique that precompiles generated source code to *binary stencils*. The stencils implement the functionality of a program,
