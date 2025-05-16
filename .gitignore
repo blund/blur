@@ -2,3 +2,4 @@
 /external/tcc/*
 !/external/tcc/.git
 compile_commands.json
+generated
