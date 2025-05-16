@@ -3,18 +3,20 @@ TCC_BUILD_DIR := build/tcc
 
 TCC := $(TCC_BUILD_DIR)/bin/tcc
 
+.PHONY: cut gen
+
 # Run our actual "compiler"
 run: tcc cut gen
 	$(TCC) -run main.c
 
 # Cut out stencils
-cut: gen
+cut:
 	mkdir -p generated/stencils
-	gcc -O2 -fno-toplevel-reorder cut.c -o cut
+	gcc -O2 -fno-toplevel-reorder -fno-align-functions cut.c -o cut
 	./cut
 
 # Generate stencils
-gen: tcc
+gen:
 	mkdir -p generated
 	$(TCC) -run gen.c
 
