@@ -115,6 +115,65 @@ Call parse_call(Parser* p) {
   return c;
 }
 
+PointerCall parse_pointer_call(Parser *p) {
+  int i = p->index;
+
+  p->ok = 1;
+  eat_whitespace(p);
+
+  PointerCall pointer_call;
+
+  parse_exact(p, '(');
+
+  parse_exact(p, '(');
+  pointer_call.return_type = parse_type(p);
+
+  parse_exact(p, '(');
+  parse_exact(p, '*');
+  parse_exact(p, ')');
+
+  parse_exact(p, '(');
+  fori(8) {
+    parse_exact(p, ')');
+    if (p->ok) {
+      pointer_call.num_parameters = i;
+      break;
+    }
+    pointer_call.parameters[i] = parse_type(p);
+    parse_exact(p, ',');
+  }
+  // type params
+  parse_exact(p, ')');
+
+  parse_exact(p, ')');
+
+
+  parse_exact(p, '(');
+  pointer_call.operand = parse_text(p);
+  parse_exact(p, ')');
+  parse_exact(p, ')');
+
+  parse_exact(p, '(');
+  // Parse argument list
+  // @TODO - extract to own function
+  fori(8) {
+    parse_exact(p, ')');
+    if (p->ok) {
+      pointer_call.num_arguments = i;
+      break;
+    }
+    pointer_call.arguments[i] = parse_text(p);
+    parse_exact(p, ',');
+  }
+
+  if (!p->ok) {
+    p->index = i;
+    return pointer_call;
+  }
+
+  return pointer_call;
+}
+
 Expr* parse_expr(Parser* p) {
   eat_whitespace(p);
   p->ok = 1;
@@ -135,7 +194,7 @@ Expr* parse_expr(Parser* p) {
   return e;
 }
 
-Assign parse_Assign(Parser* p) {
+Assign parse_assign(Parser* p) {
   eat_whitespace(p);
   p->ok = 1;
   int i = p->index;
@@ -161,23 +220,23 @@ Assign parse_Assign(Parser* p) {
   return a;
 }
 
-ArgList parse_arg_list(Parser *p) {
-  ArgList arg_list = {.arg_count = 1};
+Parameters parse_parameters(Parser *p) {
+  Parameters parameters = {.arg_count = 1};
   parse_exact(p, '(');
   fori(8) {
-    arg_list.types[i] = parse_type(p);
-    arg_list.names[i] =  parse_text(p);
+    parameters.types[i] = parse_type(p);
+    parameters.names[i] =  parse_text(p);
 
     parse_exact(p, ',');
     if (p->ok) continue;
 
     parse_exact(p, ')');
     if (p->ok) {
-      arg_list.arg_count = i+1;
+      parameters.arg_count = i+1;
       break;
     }
   }
-  return arg_list;
+  return parameters;
 }
 
 FuncDecl parse_func_decl(Parser* p) {
@@ -187,13 +246,13 @@ FuncDecl parse_func_decl(Parser* p) {
   Type type = parse_type(p);
   Unit name = parse_text(p);
 
-  ArgList arg_list = parse_arg_list(p);
+  Parameters parameters = parse_parameters(p);
 
   Block* Block = parse_scope(p);
 
   FuncDecl f;
   f.name = name;
-  f.arg_list = arg_list;
+  f.parameters = parameters;
   f.ret = type;
   f.body = Block;
 
@@ -240,6 +299,14 @@ Statement* parse_statement(Parser* p) {
     return s;
   }
 
+  p->ok = 1;
+  s->kind = statement_pointer_call_kind;
+  s->pointer_call = parse_pointer_call(p);
+  parse_exact(p, ';');
+  if (p->ok) {
+    return s;
+  }
+
   // Try function call
   p->ok = 1;
   s->kind = statement_call_kind;
@@ -254,7 +321,7 @@ Statement* parse_statement(Parser* p) {
   p->ok = 1;
   int ok = 1;
   s->kind = statement_assign_kind;
-  s->assign = parse_Assign(p);
+  s->assign = parse_assign(p);
   ok &= p->ok;
   parse_exact(p, ';');
   ok &= p->ok;

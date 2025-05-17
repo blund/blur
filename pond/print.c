@@ -9,6 +9,7 @@ void indent(Parser* p) {
   printf("%*s", p->indent, " ");
 }
 
+void print_pointer_call(Parser* p, PointerCall pc);
 void print_if_block(Parser* p, IfBlock ib);
 void print_block(Parser* p, Block* b);
 
@@ -56,7 +57,7 @@ void print_expr(Parser* p, Expr* e) {
   if (e->kind == expr_call_kind)  print_call(p,  e->call);
 }
 
-void print_statement(Parser* p, Statement* s) {
+void print_statement(Parser *p, Statement *s) {
   indent(p);
   if (s->kind == statement_assign_kind) {
     print_assign(p, s->assign);
@@ -66,7 +67,10 @@ void print_statement(Parser* p, Statement* s) {
     print_call(p,   s->call);
     printf(";\n");
   }
-
+  if (s->kind == statement_pointer_call_kind) {
+    print_pointer_call(p,   s->pointer_call);
+    printf(";\n");
+  }
   if (s->kind == statement_if_kind) {
     print_if_block(p, s->if_block);
   }
@@ -81,16 +85,36 @@ void print_assign(Parser* p, Assign a) {
 }
 void print_block(Parser* p, Block* b) {
   Block* iter = b;
+  Block* iter2 = b;
 
+ 
   // @TODO unsure about this logic, but it works B)
-  for(;;) {
+  for (;;) {
     print_statement(p, iter->statement);
     if (!iter->next) return;
     iter = iter->next;
   }
 }
 
-void print_arg_list(Parser *p, ArgList a) {
+void print_pointer_call(Parser *p, PointerCall f) {
+  printf("((");
+  print_type(p, f.return_type);
+  printf(" (*))(");
+  fori(f.num_parameters) {
+    print_type(p, f.parameters[i]);
+    if (i < f.num_parameters-1) printf(", ");
+  }
+  printf("))(");
+  print_unit(p, f.operand);
+  printf("))(");
+  fori(f.num_arguments) {
+    print_unit(p, f.arguments[i]);
+    if (i < f.num_arguments-1) printf(", ");
+  }
+  printf(")");
+}
+
+void print_parameters(Parser *p, Parameters a) {
   printf("(");
   fori(a.arg_count) {
     print_type(p, a.types[i]);
@@ -105,7 +129,7 @@ void print_func_decl(Parser* p, FuncDecl* f) {
   print_type(p,  f->ret);
   printf(" ");
   print_unit(p, f->name);
-  print_arg_list(p, f->arg_list);
+  print_parameters(p, f->parameters);
   printf(" {\n");
   p->indent += 2;
   print_block(p, f->body);

@@ -4,9 +4,9 @@
 #include "parse.h"
 #include "print.h"
 
-char* program =\
-"\
+char *program = "\
 int main(int a, int b) { \n\
+  ((void (*)(int, int))(test))(x, y);\n\
   int a = 123;\n\
   epic();\n\
   if () {\n\

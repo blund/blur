@@ -43,6 +43,7 @@ typedef struct Call {
 typedef enum StatementKind {
   statement_assign_kind,
   statement_call_kind,
+  statement_pointer_call_kind,
   statement_if_kind,
 } StatementKind;
 
@@ -56,18 +57,30 @@ typedef struct IfBlock {
   Block* body;
 } IfBlock;
 
-typedef struct ArgList {
+typedef struct Parameters {
   int  arg_count;
   Unit names[8];
   Type types[8];
-} ArgList;
+} Parameters;
 
 typedef struct FuncDecl {
   Unit    name;
   Type    ret;
-  ArgList arg_list;
+  Parameters parameters;
   Block*  body;
 } FuncDecl;
+
+typedef struct PointerCall {
+  // Type
+  Type return_type;
+  Type parameters[8];
+  int num_parameters;
+
+  // Call
+  Unit operand;
+  int num_arguments;
+  Unit arguments[8];
+} PointerCall;
 
 typedef enum ExprKind {
   expr_call_kind,
@@ -77,6 +90,8 @@ typedef enum ExprKind {
 typedef struct Expr {
   ExprKind kind;
   union {
+    // @TODO - unify PoiterCall and Call
+    PointerCall  pointer_call;
     Call  call;
     Value value;
   };
@@ -92,7 +107,8 @@ typedef struct statement {
   StatementKind kind;
   union {
     Assign   assign;
-    Call     call;
+    Call call;
+    PointerCall pointer_call;
     IfBlock if_block;
   };
 } Statement;
