@@ -435,11 +435,10 @@ IfBlock parse_if_block(Parser* p) {
 
   parse_exact(p, ')'); ok &= p->ok;
 
-  printf("%d\n", ok);
-
   if (!ok) {
     parse_error(p, i);
   }
+
   ib.body = parse_scope(p);
 
   if (!p->ok) {
