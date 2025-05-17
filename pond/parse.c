@@ -429,7 +429,10 @@ IfBlock parse_if_block(Parser* p) {
   }
 
   int ok = 1;
-  parse_exact(p, '('); ok &= p->ok;
+  parse_exact(p, '(');
+  ok &= p->ok;
+  ib.condition = parse_text(p);
+
   parse_exact(p, ')'); ok &= p->ok;
 
   printf("%d\n", ok);

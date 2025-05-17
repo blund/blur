@@ -42,7 +42,9 @@ void print_call(Parser* p, Call c) {
 }
 
 void print_if_block(Parser* p, IfBlock ib) {
-  printf("if () {\n");
+  printf("if (");
+  print_unit(p, ib.condition);
+  printf(") {\n");
   p->indent += 2;
 
   print_block(p, ib.body);

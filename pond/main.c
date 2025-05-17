@@ -20,7 +20,7 @@ int main(int a, int b) { \n\
 
 char *if_impl = "\
 int if_test(int a, int b) { \n\
-  if () {\n\
+  if (condition) {\n\
       ((void (*)(int, int))(0xfefe))(x, y);\n\
   }\n\
   ((void (*)(int, int))(0x3232))(x, y);\n\
