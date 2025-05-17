@@ -35,7 +35,7 @@ PreStencil add_const_pre = {
 PreStencil if_pre = {
     .name = "if_test",
     .num_holes = 2,
-    .args = "uintptr_t stack, int condition",
+    .args = "uintptr_t stack, int condition, int x",
 };
 
 PreStencil pres[num_stencils];
@@ -58,7 +58,7 @@ int main() {
 
   // Build function for if_test
   sb = new_builder(64);
-  add_to(sb, "if (condition) { ((cps)(%s))(stack); } else { ((cps)(%s))(stack); }", arg0_64, arg1_64);
+  add_to(sb, "if (condition) { ((cps_int)(%s))(stack, x); } else { ((cps_int)(%s))(stack, x); }", arg0_64, arg1_64);
   if_pre.code = to_string(sb);
 
   pres[0] = add_pre;

@@ -104,8 +104,8 @@ int main() {
   uintptr_t stack = (uintptr_t)&stack;
 
   // Call the modified machine code
-  cps_int func = (cps_int)em.code;
-  func(stack, 1);
+  cps_int_int func = (cps_int_int)em.code;
+  func(stack, 0, 2);
 
   // Clean up
   // free(stencil.code);
