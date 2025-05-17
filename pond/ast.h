@@ -2,6 +2,7 @@
 #define AST_H
 
 #define THIS p->code[p->index]
+#define NEXT p->code[p->index+1]
 #define DBG printf("DBG:\n%s\n\n", &THIS)
 #define OK = p->ok
 
@@ -27,7 +28,7 @@ typedef struct Unit {
 } Unit;
 
 typedef struct Value {
-  Unit       data;
+  Unit      data;
   ValueType type;
 } Value;
 
@@ -77,7 +78,7 @@ typedef struct PointerCall {
   int num_parameters;
 
   // Call
-  Unit operand;
+  Unit operand; // @TODO - this could be more general, we assume this to be a hex for now
   int num_arguments;
   Unit arguments[8];
 } PointerCall;

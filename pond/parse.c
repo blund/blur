@@ -17,13 +17,50 @@ Unit parse_text(Parser* p) {
   p->ok = 1;
   Unit u = {.start = p->index};
 
+
+  int ok = 0;
+
   while ((THIS >= 'A' && THIS < 'Z') || (THIS >= 'a' && THIS <= 'z')) {
+    p->index++;
+    ok = 1;
+  }
+
+  // @BL - there is probably a bug here, I didn't test this.
+  // I just wanted to make sure we got at least one letter
+  // before we start parsing nums and underscores
+  if (!ok) return u;
+  while ((THIS >= 'A' && THIS < 'Z') || (THIS >= 'a' && THIS <= 'z')
+	 || (THIS >= '0' && THIS <= '9')
+	 || (THIS == '_')) {
     p->index++;
   }
 
   u.end = p->index;
   return u;
 }
+
+Unit parse_hex(Parser* p) {
+  eat_whitespace(p);
+  p->ok = 1; // Reset index
+  int i = p->index; // Save index
+
+  Unit u = {.start = p->index};
+
+  if (!(THIS == '0' && NEXT == 'x')) {
+    p->ok = 0;
+    return u;
+  }
+
+  p->index+=2;
+  while (THIS >= '0' && THIS <= '9' || THIS >= 'a' && THIS <= 'f'
+	 || THIS >= 'A' && THIS <= 'F') {
+    p->index++;
+  }
+
+  u.end = p->index;
+  return u;
+}
+
 
 Value parse_number(Parser* p) {
   eat_whitespace(p);
@@ -33,7 +70,7 @@ Value parse_number(Parser* p) {
   Value v;
   v.type = integer_type;
  
-  Unit u = {.start = p->index}; 
+  Unit u = {.start = p->index};
 
   // Return early if not ok
   if (THIS < '0' || THIS > '9') {
@@ -149,7 +186,7 @@ PointerCall parse_pointer_call(Parser *p) {
 
 
   parse_exact(p, '(');
-  pointer_call.operand = parse_text(p);
+  pointer_call.operand = parse_hex(p); // @TODO - this is really ad hoc..
   parse_exact(p, ')');
   parse_exact(p, ')');
 
@@ -191,6 +228,7 @@ Expr* parse_expr(Parser* p) {
     e->kind = expr_value_kind;
     e->value = parse_string(p);
   }
+
   return e;
 }
 

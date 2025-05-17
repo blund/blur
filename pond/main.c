@@ -18,10 +18,19 @@ int main(int a, int b) { \n\
   int a = epic();\n\
 }";
 
+char *if_impl = "\
+int if_test(int a, int b) { \n\
+  if () {\n\
+      ((void (*)(int, int))(0xfefe))(x, y);\n\
+  }\n\
+  ((void (*)(int, int))(0x3232))(x, y);\n\
+}";
+
+
 int main() {
   Parser p = {
-    .code = program,
-    .len = strlen(program),
+    .code = if_impl,
+    .len = strlen(if_impl),
     .index = 0,
 
     // This is for the printing after parsing
