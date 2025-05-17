@@ -5,6 +5,8 @@
 #include "ast.h"
 #include "parse.h"
 
+#include "../bl.h"
+
 void eat_whitespace(Parser* p) {
   if (p->index >= p->len) return;
   while (strchr(" \\\n\t", THIS)) p->index++;
@@ -159,6 +161,25 @@ Assign parse_Assign(Parser* p) {
   return a;
 }
 
+ArgList parse_arg_list(Parser *p) {
+  ArgList arg_list = {.arg_count = 1};
+  parse_exact(p, '(');
+  fori(8) {
+    arg_list.types[i] = parse_type(p);
+    arg_list.names[i] =  parse_text(p);
+
+    parse_exact(p, ',');
+    if (p->ok) continue;
+
+    parse_exact(p, ')');
+    if (p->ok) {
+      arg_list.arg_count = i+1;
+      break;
+    }
+  }
+  return arg_list;
+}
+
 FuncDecl parse_func_decl(Parser* p) {
   eat_whitespace(p);
   p->ok = 1;
@@ -166,15 +187,13 @@ FuncDecl parse_func_decl(Parser* p) {
   Type type = parse_type(p);
   Unit name = parse_text(p);
 
-  parse_exact(p, '(');
-  parse_type(p);
-  parse_text(p);
-  parse_exact(p, ')');
+  ArgList arg_list = parse_arg_list(p);
 
   Block* Block = parse_scope(p);
 
   FuncDecl f;
   f.name = name;
+  f.arg_list = arg_list;
   f.ret = type;
   f.body = Block;
 

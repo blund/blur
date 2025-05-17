@@ -1,6 +1,9 @@
 #include "stdio.h"
 
+#include "../bl.h"
+
 #include "ast.h"
+
 
 void indent(Parser* p) {
   printf("%*s", p->indent, " ");
@@ -87,11 +90,23 @@ void print_block(Parser* p, Block* b) {
   }
 }
 
+void print_arg_list(Parser *p, ArgList a) {
+  printf("(");
+  fori(a.arg_count) {
+    print_type(p, a.types[i]);
+    printf(" ");
+    print_unit(p, a.names[i]);
+    if (i < a.arg_count-1) printf(", ");
+  }
+  printf(")");
+}
+
 void print_func_decl(Parser* p, FuncDecl* f) {
   print_type(p,  f->ret);
   printf(" ");
-  print_unit(p,  f->name);
-  printf("() {\n");
+  print_unit(p, f->name);
+  print_arg_list(p, f->arg_list);
+  printf(" {\n");
   p->indent += 2;
   print_block(p, f->body);
   printf("}\n");

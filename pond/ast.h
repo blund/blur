@@ -56,11 +56,17 @@ typedef struct IfBlock {
   Block* body;
 } IfBlock;
 
+typedef struct ArgList {
+  int  arg_count;
+  Unit names[8];
+  Type types[8];
+} ArgList;
+
 typedef struct FuncDecl {
-  Unit   name;
-  Type   ret;
-  Unit   params;
-  Block* body;
+  Unit    name;
+  Type    ret;
+  ArgList arg_list;
+  Block*  body;
 } FuncDecl;
 
 typedef enum ExprKind {

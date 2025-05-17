@@ -6,7 +6,7 @@
 
 char* program =\
 "\
-int main() { \n\
+int main(int a, int b) { \n\
   int a = 123;\n\
   epic();\n\
   if () {\n\
