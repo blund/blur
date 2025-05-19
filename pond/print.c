@@ -90,7 +90,8 @@ void print_block(Parser* p, Block* b) {
  
   // @TODO unsure about this logic, but it works B)
   for (;;) {
-    print_statement(p, iter->statement);
+    if (iter->statement)
+      print_statement(p, iter->statement);
     if (!iter->next) return;
     iter = iter->next;
   }

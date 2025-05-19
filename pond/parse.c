@@ -339,6 +339,11 @@ void parse_error(Parser* p, int start) {
   exit(-1);
 }
 
+Statement *new_statement() {
+  Statement *b = malloc(sizeof(Statement));
+  return b;
+}
+
 Statement* parse_statement(Parser* p) {
   eat_whitespace(p);
   int i = p->index;
@@ -384,6 +389,12 @@ Statement* parse_statement(Parser* p) {
   }
 
   return s;
+}
+
+Block *new_block() {
+  Block *b = malloc(sizeof(Block));
+  b->next = 0;
+  return b;
 }
 
 Block* parse_block(Parser* p) {

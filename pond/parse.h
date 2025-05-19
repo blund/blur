@@ -2,6 +2,10 @@
 
 #include "ast.h"
 
+
+Block *new_block();
+Statement *new_statement();
+
 void parse_error(Parser* p, int start);
 
 void parse_whitespace(Parser* p);
