@@ -73,9 +73,9 @@ int main() {
   f2.ret = make_type("void", 0);
 
   f2.parameters = (Parameters){
-      .arg_count = 2,
-      .names = {make_unit("a"), make_unit("b")},
-      .types = {make_type("int", 0), make_type("int", 0)},
+      .arg_count = 3,
+      .names = {make_unit("stack"), make_unit("condition"), make_unit("x")},
+      .types = {make_type("uintptr_t", 0), make_type("int", 0), make_unit("int")},
   };
 
   f2.body = new_block();
@@ -91,8 +91,14 @@ int main() {
 
     ptr_call->operand = make_unit("0xfefefef0");
     ptr_call->return_type = make_type("void", 0);
-    ptr_call->num_parameters = 0;
-    ptr_call->num_arguments = 0;
+
+    ptr_call->num_parameters = 2;
+    ptr_call->parameters[0] = make_type("int", 0);
+    ptr_call->parameters[1] = make_type("int", 0);
+
+    ptr_call->num_arguments = 2;
+    ptr_call->arguments[0] = make_unit("a");
+    ptr_call->arguments[1] = make_unit("b");
   }
   f2.body->next = new_block();
   {
@@ -104,8 +110,14 @@ int main() {
 
     ptr_call->operand = make_unit("0xfefefef1");
     ptr_call->return_type = make_type("void", 0);
-    ptr_call->num_parameters = 0;
-    ptr_call->num_arguments = 0;
+
+    ptr_call->num_parameters = 2;
+    ptr_call->parameters[0] = make_type("int", 0);
+    ptr_call->parameters[1] = make_type("int", 0);
+
+    ptr_call->num_arguments = 2;
+    ptr_call->arguments[0] = make_unit("a");
+    ptr_call->arguments[1] = make_unit("b");
   }
 
 
