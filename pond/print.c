@@ -13,10 +13,8 @@ void print_pointer_call(Parser* p, PointerCall pc);
 void print_if_block(Parser* p, IfBlock ib);
 void print_block(Parser* p, Block* b);
 
-void print_unit(Parser* p, Unit u) {
-  for (int i = u.start; i < u.end; i++) {
-    printf("%c", p->code[i]);
-  }
+void print_unit(Parser *p, Unit u) {
+  printf("%.*s", u.end-u.start, u.ptr);
 }
 void print_type(Parser* p, Type t) {
   print_unit(p, t.name);

@@ -23,8 +23,9 @@ typedef struct Parser {
 typedef struct statement Statement;
 
 typedef struct Unit {
-  int start; // Index of the first char of the Unit
-  int end;   // Index of the char following the Unit
+  char *ptr; // Index of the first char of the Unit
+  int start;
+  int end; // Index of the char following the Unit
 } Unit;
 
 typedef struct Value {

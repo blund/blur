@@ -7,6 +7,15 @@
 
 #include "../bl.h"
 
+void unit_set_start(Parser *p, Unit* u) {
+  u->ptr = &p->code[p->index];
+  u->start = p->index;
+}
+
+void unit_set_end(Parser *p, Unit* u) {
+  u->end = p->index;
+}
+
 void eat_whitespace(Parser* p) {
   if (p->index >= p->len) return;
   while (strchr(" \\\n\t", THIS)) p->index++;
@@ -15,7 +24,9 @@ void eat_whitespace(Parser* p) {
 Unit parse_text(Parser* p) {
   eat_whitespace(p);
   p->ok = 1;
-  Unit u = {.start = p->index};
+
+  Unit u;
+  unit_set_start(p, &u);
 
 
   int ok = 0;
@@ -35,7 +46,7 @@ Unit parse_text(Parser* p) {
     p->index++;
   }
 
-  u.end = p->index;
+  unit_set_end(p, &u);
   return u;
 }
 
@@ -43,8 +54,10 @@ Unit parse_hex(Parser* p) {
   eat_whitespace(p);
   p->ok = 1; // Reset index
   int i = p->index; // Save index
+  const int start = p->index; // Save index
 
-  Unit u = {.start = p->index};
+  Unit u;
+  unit_set_start(p, &u);
 
   if (!(THIS == '0' && NEXT == 'x')) {
     p->ok = 0;
@@ -57,7 +70,7 @@ Unit parse_hex(Parser* p) {
     p->index++;
   }
 
-  u.end = p->index;
+  unit_set_end(p, &u);
   return u;
 }
 
@@ -69,8 +82,9 @@ Value parse_number(Parser* p) {
 
   Value v;
   v.type = integer_type;
- 
-  Unit u = {.start = p->index};
+
+  Unit u;
+  unit_set_start(p, &u);
 
   // Return early if not ok
   if (THIS < '0' || THIS > '9') {
@@ -82,7 +96,7 @@ Value parse_number(Parser* p) {
     p->index++;
   }
 
-  u.end = p->index;
+  unit_set_end(p, &u);
   v.data = u;
   return v;
 }
@@ -104,7 +118,8 @@ Value parse_string(Parser* p) {
   Value v;
   v.type = string_type;
   
-  Unit u = {.start = p->index};
+  Unit u;
+  unit_set_start(p, &u);
 
   parse_exact(p, '"');
   while (THIS != '"') {
@@ -113,6 +128,7 @@ Value parse_string(Parser* p) {
   parse_exact(p, '"');
 
   u.end = p->index;
+  unit_set_end(p, &u);
   v.data = u;
   return v;
 }
