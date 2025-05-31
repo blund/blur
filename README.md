@@ -14,48 +14,59 @@ This is done by pattern matching on the abstract syntax tree of the code, which 
 Another benefit of Copy-and-Patch is that you get portability for free. You can compile the *binary stencils* for any architecture your backend compiler supports. 
 This includes instruction set architechtures (ISAs) and calling conventions. 
 
-## Setup
-To build `blur`, execute the following:
+## Running
+To try out the system, simply type
 ```
-git submodule update --init
-make run
+make
 ```
-This will build the `tcc` compiler from source, and use it to generate stencils and run an example program.
 
+This should generate stencils, compile them to machine code and execute the `blur` executable. This executable compiles a simple program using copy-and-patch at runtime, and executes it from memory.
 
 ## This work
-So far, a proof of concept stencil generator for addition is implemented, as well as a patching example for this stencil. 
+This project is an attempt to implement a Copy-and-Patch compiler. The general structure of the system is shown in the graph below:
+```                 
+                        ┌────────────┐    ┌────────────────┐    ┌────────────────────────┐                        
+                        │ Generate   │    │ Create machine │    │ Copy-and-Patch         │                        
+                        │ C code for │───►│ code stencils  │───►│ stencils to executable │                        
+                        │ stencils   │    │ with holes     │    │ binary at runtime      │                        
+                        └────────────┘    └────────────────┘    └────────────────────────┘                        
 
-This proof of concept compiles a simple adder function. It contains two sentinel values that are placeholders for patching later. These are `0xfffffff0` and `0xfffffff1`.
 ```
-int add() {
-    int a = 0xfffffff0;
-    int b = 0xfffffff1;
-    int c = a + b;
-    return c;
+
+This project implements the entire pipeline from stencil generation to runtime compilation. 
+Currently, only an if-statement and addition is implemented.
+
+### Stencils, Holes, Patching
+This is the implementation for one of the stencils, the `add_const` stencil:
+```
+void add_const(int lhs) {
+  int result = lhs + 0x3e7a91bc;
+  ((void (*)(uintptr_t, int))(0xe2d9c7b1843a56f0))(result);
 }
 ```
+The C code is generated in the `gen.c` file, from an AST describing its structure.
+This function performs an addition, and then calls a function with the result of that addition. This style is known as *continuation-passing style*, or CPS. 
+
+There are two sentinel values in this code, `0x3e7a91bc` and `0xe2d9c7b1843a56f0`. These are arbitrary values set to denote the *holes*, or values in the machine code we want to replace during the copy-and-patch compilation.
+When *cutting the stencil*, a program inspects the machine code for this functions, and identifies where these values are. They are marked respectively as a 32-bit hole and a 64-bit hole.
+
+
 When compiled, we get the following machine code.
 ```
-0000000  55  48  89  e5  48  81  ec  10  00  00  00  b8 [f0  ff  ff  ff]
-0000010  89  45  fc  b8 [f1  ff  ff  ff] 89  45  f8  8b  45  fc  8b  4d
-0000020  f8  01  c8  89  45  f4  8b  45  f4  c9  c3  62  6c  75  72  2b
-0000030  00  00  00  0c  00  00  00  14  00  00  00
+0000000:       81 c6 [ bc 91 7a 3e ]              add    $0x3e7a91bc,%esi
+0000006:       48 b8 [ f0 56 3a 84 b1 c7 d9 e2 ]  movabs $0xe2d9c7b1843a56f0,%rax    
+00000a0:       ff e0                              jmp    *%rax
 ```
-Here, we can see two blocks of interest, namely `[f0  ff  ff  ff]` at the end of line one and `[f1  ff  ff  ff]` in line two (marked for clarity). 
-These are the values we want to note as *holes*. A simply `memcpy` operation is used to find these, and mark their index in the code.
-Then, during *Copy-and-Patch*, we simply compy the entire code block, and replace these *hole* values with the numbers we want to add!
+Here, I have marked out two blocks of interests with square brackets. These are the same values as our sentinels from before, only as they are stored in memory in little endian notation.
+During copy-and-patch compilation, we can replace these values with any value we want. 
+To give an example, say we want to replace the first stentinel with the value `0x02` and the second with the address of a function that prints the result, `0x000055aabbccdde0`. This procedure is as simple as writing new bytes to their locations in memory:
 
-
-If say want to add the integers `1` and `2`, we replace these *holes* with the corresponding integer representation:
 ```
-0000000  55  48  89  e5  48  81  ec  10  00  00  00  b8 [01  00  00  00]
-0000010  89  45  fc  b8 [02  00  00  00] 89  45  f8  8b  45  fc  8b  4d
-0000020  f8  01  c8  89  45  f4  8b  45  f4  c9  c3  62  6c  75  72  2b
-0000030  00  00  00  0c  00  00  00  14  00  00  00
+0000000:       81 c6 [ 02 00 00 00 ]              add    $0x3e7a91bc,%esi
+0000006:       48 b8 [ e0 dd cc bb aa 55 00 00 ]  movabs $0xe2d9c7b1843a56f0,%rax    
+00000a0:       ff e0                              jmp    *%rax
 ```
+If we now call the function, `add_const(5)`, we now get the result `7`!
 
-Which when executed returns the number `5`. Hurra!
+By combining stencils in continuation-passing style, we are able to craft efficient machine code for programs from these granular stenils. This is the beautfy of copy-and-patch compilation!
 
-## Further work
-A lot is left to do here!
