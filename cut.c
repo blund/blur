@@ -75,7 +75,7 @@ int main() {
 
     uint32_t blur_tag = 0x72756C62;
     uint32_t code_tag = 0x636f6465;
-    uint32_t end_tag = 0x656e6421;
+    uint32_t end_tag  = 0x656e6421;
 
     fwrite(&blur_tag, sizeof(uint32_t), 1, f);
     fwrite(&s->code_size, sizeof(uint32_t), 1, f);
@@ -83,37 +83,10 @@ int main() {
     fwrite(&s->num_holes_64, sizeof(uint32_t), 1, f);
     fwrite(&s->holes_32, sizeof(int), 4, f);
     fwrite(&s->holes_64, sizeof(int), 4, f);
-    {
-      // Determine current offset
-      long pos = ftell(f);
-      if (pos == -1L) {
-	perror("ftell failed");
-        fclose(f);
-	exit(0);
-      }
-
-      // Align to next 16-byte boundary
-      size_t padding = (16 - ((pos + sizeof(uint32_t)) % 16)) % 16;
-
-      // Optional: fill padding with zeros (or anything else)
-      uint8_t zero = 0;
-      for (size_t i = 0; i < padding; ++i) {
-	fwrite(&zero, 1, 1, f);
-      }
-
-      // Now write tag right before func_ptr
-      fwrite(&code_tag, sizeof(uint32_t), 1, f);
-
-      // Confirm func_ptr is 16-byte aligned
-      pos = ftell(f);
-      if (pos % 16 != 0) {
-	fprintf(stderr, "Error: func_ptr not 16-byte aligned!\n");
-      }
-    }
-
+    fwrite(&code_tag, sizeof(uint32_t), 1, f);
     fwrite(func_ptr, 1, s->code_size, f);
     fwrite(&end_tag, sizeof(uint32_t), 1, f);
-
     fclose(f);
+
     }
 }
