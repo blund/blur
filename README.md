@@ -26,11 +26,10 @@ This should generate stencils, compile them to machine code and execute the `blu
 This project is an attempt to implement a Copy-and-Patch compiler. The general structure of the system is shown in the graph below:
 ```                 
            ┌────────────┐    ┌────────────────┐    ┌────────────────────────┐
-           │ Generate   │    │ Create machine │    │ Copy-and-Patch         │                        
-           │ C code for │───►│ code stencils  │───►│ stencils to executable │                        
-           │ stencils   │    │ with holes     │    │ binary at runtime      │                        
-           └────────────┘    └────────────────┘    └────────────────────────┘                        
-
+           │ Generate   │    │ Create machine │    │ Copy-and-Patch         │
+           │ C code for │───►│ code stencils  │───►│ stencils to executable │
+           │ stencils   │    │ with holes     │    │ binary at runtime      │
+           └────────────┘    └────────────────┘    └────────────────────────┘
 ```
 
 This project implements the entire pipeline from stencil generation to runtime compilation. 
