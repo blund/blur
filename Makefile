@@ -1,20 +1,23 @@
 .PHONY: cut gen
 
+CC=zig cc
+# CC=gcc -fno-toplevel-reorder
+
 # Run our actual "compiler"
 run: cut
-	gcc -g main.c -o blur
+	$(CC) -O2 -g main.c -o blur
 	@./blur
 
 # Cut out stencils
 cut: gen
 	@mkdir -p generated/stencils
-	@gcc -O1 -fno-toplevel-reorder -fno-align-labels -fno-align-functions cut.c -o cut
+	$(CC) -O2 cut.c -o cut
 	@./cut
 
 # Generate stencils
 gen:
 	@mkdir -p generated
-	gcc gen.c pond/parse.c pond/print.c -o gen
+	$(CC) gen.c pond/parse.c pond/print.c -o gen
 	@./gen
 
 # Cleanup scripts :)
