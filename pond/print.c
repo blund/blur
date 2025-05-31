@@ -51,11 +51,20 @@ void print_if_block(Parser* p, IfBlock ib) {
   add_to(p->output, ") {\n");
   p->indent += 2;
 
-  print_block(p, ib.body);
+  print_block(p, ib.if_block);
+  p->indent -= 2;
+
+  indent(p);
+  add_to(p->output, "}");
+
+  add_to(p->output, " else {\n");
+  p->indent += 2;
+  print_block(p, ib.else_block);
   p->indent -= 2;
 
   indent(p);
   add_to(p->output, "}\n");
+
 }
 
 void print_binop(Parser *p, BinOp *e) {

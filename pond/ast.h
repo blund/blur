@@ -60,7 +60,8 @@ typedef struct Block {
 
 typedef struct IfBlock {
   Unit condition;
-  Block* body;
+  Block* if_block;
+  Block* else_block;
 } IfBlock;
 
 

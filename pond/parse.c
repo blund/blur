@@ -488,17 +488,19 @@ Block* parse_scope(Parser* p) {
   return b;
 }
 
-IfBlock *new_if_block(Block *b) {
+IfBlock *new_if_block(Block *b, char* condition) {
   Statement *s = b->statement;
 
   s->kind = statement_if_kind;
   IfBlock *ib = &s->if_block;
 
-  ib->condition = make_unit("condition");
-  ib->body = new_block();
-  ib->body->statement = new_statement();
-  // s->if_block.body->statement->kind = statement_pointer_call_kind;
+  ib->condition = make_unit(condition);
 
+  ib->if_block = new_block();
+  ib->if_block->statement = new_statement();
+
+  ib->else_block = new_block();
+  ib->else_block->statement = new_statement();
   return ib;
 }
 
@@ -564,7 +566,7 @@ IfBlock parse_if_block(Parser* p) {
     parse_error(p, i);
   }
 
-  ib.body = parse_scope(p);
+  ib.if_block = parse_scope(p);
 
   if (!p->ok) {
     parse_error(p, i);

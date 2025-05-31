@@ -99,7 +99,7 @@ int main() {
 }
 
 FuncDecl *build_if_test_ast() {
-    FuncDecl *if_test = new_func_decl("void", "if_test",
+  FuncDecl *if_test = new_func_decl("void", "if_test",
 				    (Parameters){.count = 3,
 						 .entries = {
 						   new_parameter("uintptr_t", "stack"),
@@ -107,14 +107,14 @@ FuncDecl *build_if_test_ast() {
 						   new_parameter("int", "x"),
 						 }
 				    });
-  IfBlock *if_block = new_if_block(if_test->body);
-  new_pointer_call(if_block->body, "void", STR(big_hole_1),
+  IfBlock *if_block = new_if_block(if_test->body, "condition");
+  new_pointer_call(if_block->if_block, "void", STR(big_hole_1),
 		   (Parameters){.count = 2,
 				.entries = {
 				  new_parameter("uintptr_t", "stack"),
 				  new_parameter("int", "x"),
 				}});
-  new_pointer_call(next_block(if_test->body), "void", STR(big_hole_2),
+  new_pointer_call(if_block->else_block, "void", STR(big_hole_2),
 		   (Parameters){
 		     .count = 2,
 		     new_parameter("uintptr_t", "stack"),
@@ -123,14 +123,15 @@ FuncDecl *build_if_test_ast() {
 
   return if_test;
 };
+
 FuncDecl *build_add_const_ast() {
   FuncDecl *add_const =
-      new_func_decl("void", "add_const",
-                    (Parameters){.count = 2,
-                                 .entries = {
-                                     new_parameter("uintptr_t", "stack"),
-                                     new_parameter("int", "lhs"),
-                                 }});
+    new_func_decl("void", "add_const",
+		  (Parameters){.count = 2,
+			       .entries = {
+				 new_parameter("uintptr_t", "stack"),
+				 new_parameter("int", "lhs"),
+			       }});
   Assign *a = new_assign(add_const->body, "int", "result");
   new_binop(a->expr, "lhs", "+", STR(small_hole_1));
   new_pointer_call(next_block(add_const->body), "void", STR(big_hole_1),
