@@ -68,5 +68,5 @@ To give an example, say we want to replace the first stentinel with the value `0
 ```
 If we now call the function, `add_const(5)`, we now get the result `7`!
 
-By combining stencils in continuation-passing style, we are able to craft efficient machine code for programs from these granular stenils. This is the beauty of copy-and-patch compilation!
+By combining stencils in continuation-passing style, we are able to craft efficient machine code for programs from these granular stencils. This is the beauty of copy-and-patch compilation!
 
