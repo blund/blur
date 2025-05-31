@@ -26,10 +26,11 @@ uint32_t code_tag = 0x636f6465;
 uint32_t end_tag = 0x656e6421;
 
 // Read in binary stencil file to memory
-Stencil read_stencil(char* file_path) {
+Stencil read_stencil(char *file_path) {
+  dprintf("  -- Reading stencil at '%s'\n", file_path);
   char* raw;
   int file_size = read_file(file_path, &raw);
-  printf("File Size: %d\n", file_size);
+  dprintf("    -- File Size: %d\n", file_size);
 
   // Read footer values from memory
   uint32_t *header = (uint32_t *)(raw);
@@ -45,9 +46,13 @@ Stencil read_stencil(char* file_path) {
   memcpy(&stencil.holes_32, &header[4], sizeof(uint32_t)*max_stencil_holes);
   memcpy(&stencil.holes_64, &header[4+max_stencil_holes], sizeof(uint32_t)*max_stencil_holes);
 
-  fori(stencil.num_holes_32) printf("32-bit stencil hole %d at index %d\n", i, stencil.holes_32[i]);
+  dprintf("    -- 32-bit holes: %d\n", stencil.num_holes_32);
+  fori(stencil.num_holes_32)
+    dprintf("      -- 32-bit stencil hole %d at index %d\n", i, stencil.holes_32[i]);
+
+  dprintf("    -- 64-bit holes: %d\n", stencil.num_holes_64);
   fori(stencil.num_holes_64)
-      printf("64-bit stencil hole %d at index %d\n", i, stencil.holes_64[i]);
+      dprintf("      -- 64-bit stencil hole %d at index %d\n", i, stencil.holes_64[i]);
 
 
   int code_tag_index;
@@ -58,10 +63,7 @@ Stencil read_stencil(char* file_path) {
     }
   }
 
-  printf("code tag index: %d\n", code_tag_index);
   assert(header[code_tag_index] == code_tag);
-
-  printf("code_size: %d\n", stencil.code_size);
 
   stencil.code = (uint8_t*)&header[code_tag_index+1];
 
@@ -78,7 +80,6 @@ void patch_hole_64(uint8_t* code, Stencil* s, int index, uint64_t value) {
   int code_index = s->holes_64[index];
   *(uint64_t*)&(code[code_index]) = value;
 }
-
 
 
 ExecutableMemory make_executable_memory() {
@@ -104,8 +105,8 @@ uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   return location;
 }
 
-void func(uintptr_t, int, int);
 int main() {
+  dprintf(" Running copy-patch compiler...\n");
   Stencil add_stencil = read_stencil("generated/stencils/add_const.bin");
   Stencil if_stencil = read_stencil("generated/stencils/if_test.bin");
 

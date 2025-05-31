@@ -22,18 +22,18 @@ uint64_t big_holes[4] = {
 };
 
 int main() {
+  dprintf(" Running stencil cutting...\n");
   build_stencils();
 
-  printf("%p\n", add_const);
-  printf("%p\n", add_const_end);
-  
   fori(num_stencils) {
     Stencil* s = &stencils[i];
-    printf("stencil: %s\n", s->name);
-    printf("32 bit holes: %d\n", s->num_holes_32);
-    printf("64 bit holes: %d\n", s->num_holes_64);
+    dprintf("  -- Stencil '%s': %d 32-bit holes, %d 64-bit-holes\n", s->name,
+	   s->num_holes_32,
+	   s->num_holes_64);
 
     uint8_t *func_ptr = (uint8_t *)s->code;
+
+    dprintf("    -- Code size: %d\n", s->code_size);
 
     // Search for our sentinel values
     // Since we read 4 bytes at a time, size-3 is the last 4 byte chunk
@@ -42,7 +42,7 @@ int main() {
       for (size_t i = 0; i < s->code_size - 3; ++i) {
         uint32_t *val = (uint32_t *)&func_ptr[i]; // read 4 bytes
         if (*val == small_holes[j]) {
-	  printf("found 32 bit hole %d at index %ld\n", j, i);
+	  dprintf("    -- Found 32 bit hole %d at index %ld\n", j, i);
 	  s->holes_32[j] = i;
           holes_found_32++;
 	}
@@ -51,11 +51,10 @@ int main() {
 
     int holes_found_64 = 0;
     forj(s->num_holes_64) {
-      printf("%d\n", i);
       for (size_t i = 0; i < s->code_size - 3; ++i) {
         uint64_t *val = (uint64_t *)&func_ptr[i]; // read 4 bytes
         if (*val == big_holes[j]) {
-	  printf("found 64 bit hole %d at index %ld\n", j, i);
+	  dprintf("    -- Found 64 bit hole %d at index %ld\n", j, i);
 	  s->holes_64[j] = i;
 	  holes_found_64++;
 	}

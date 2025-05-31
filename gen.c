@@ -38,11 +38,13 @@ PreStencil pres[num_stencils];
 
 
 int main() {
+  dprintf(" Running stencil code generation...\n");
+
   FuncDecl *if_test_ast = build_if_test_ast();
   FuncDecl *add_const_ast = build_add_const_ast();
 
-
   Parser p = {0};
+
   // Construct add_const code
   add_const_pre.code = new_builder(1024);
   p.output = add_const_pre.code;
@@ -64,6 +66,7 @@ int main() {
 
   fori(num_stencils) {
     PreStencil pre = pres[i];
+    dprintf("  -- generation %s\n", pre.name);
   
     // The function (and end function to know its length)
     add_to(sb, "// Stencil generator for %s \n", pre.name);

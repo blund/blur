@@ -3,6 +3,14 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdio.h>
+
+#ifdef DEBUG
+#define dprintf(fmt, args...) fprintf(stderr, fmt, ## args)
+#else
+#define dprintf(fmt, args...)
+#endif
+
 
 typedef struct StringBuilder {
   char* buffer;

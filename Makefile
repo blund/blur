@@ -1,23 +1,29 @@
 .PHONY: cut gen
 
-CC=zig cc
-# CC=gcc -fno-toplevel-reorder
+# This should work with most C compilers, test at your own pleasure :)
+cc=zig cc
+# cc=tcc
+# cc=gcc -fno-toplevel-reorder
+# cc=clang
+
+# Enable debug printing for information about stencil building and cutting
+debug=-DDEBUG
 
 # Run our actual "compiler"
 run: cut
-	$(CC) -O2 -g main.c -o blur
+	@$(cc) $(debug) -O2 -g main.c -o blur
 	@./blur
 
 # Cut out stencils
 cut: gen
 	@mkdir -p generated/stencils
-	$(CC) -O2 cut.c -o cut
+	@$(cc) $(debug) -O2 cut.c -o cut 
 	@./cut
 
 # Generate stencils
 gen:
 	@mkdir -p generated
-	$(CC) gen.c pond/build.c pond/print.c -o gen
+	@$(cc) $(debug) gen.c pond/build.c pond/print.c -o gen
 	@./gen
 
 # Cleanup scripts :)
