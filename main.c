@@ -65,19 +65,6 @@ Stencil read_stencil(char* file_path) {
 
   stencil.code = (uint8_t*)&header[code_tag_index+1];
 
-  /*
-  // printf("%d, %d\n", next_blur_tag, stencil.code_size*8 );
-
-  // stencil.code = (uint8_t*)&header[4+2*max_stencil_holes];
-  uint32_t blur_tag2 = header[base + stencil.code_size*8-1];
-  if (blur_tag2 != 0x72756C62) {
-    fprintf(stderr, "Invalid blur tag!\n");
-    free(raw);
-    exit(-1); // @TODO - :)
-  }
-  */
-
-
   return stencil;
 }
 
