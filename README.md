@@ -35,7 +35,7 @@ This project is an attempt to implement a Copy-and-Patch compiler. The general s
 This project implements the entire pipeline from stencil generation to runtime compilation. 
 Currently, only an if-statement and addition is implemented.
 
-### Stencils, Holes, Patching
+### Stencils
 This is the implementation for one of the stencils, the `add_const` stencil:
 ```
 void add_const(int lhs) {
@@ -46,11 +46,10 @@ void add_const(int lhs) {
 The C code is generated in the `gen.c` file, from an AST describing its structure.
 This function performs an addition, and then calls a function with the result of that addition. This style is known as *continuation-passing style*, or CPS. 
 
+### Holes
 There are two sentinel values in this code, `0x3e7a91bc` and `0xe2d9c7b1843a56f0`. These are arbitrary values set to denote the *holes*, or values in the machine code we want to replace during the copy-and-patch compilation.
 When *cutting the stencil*, a program inspects the machine code for this functions, and identifies where these values are. They are marked respectively as a 32-bit hole and a 64-bit hole.
-
-
-When compiled, we get the following machine code.
+When this function is compiled, we get the following machine code:
 ```
 0000000:       81 c6 [ bc 91 7a 3e ]              add    $0x3e7a91bc,%esi
 0000006:       48 b8 [ f0 56 3a 84 b1 c7 d9 e2 ]  movabs $0xe2d9c7b1843a56f0,%rax    
@@ -58,6 +57,8 @@ When compiled, we get the following machine code.
 ```
 Here, I have marked out two blocks of interests with square brackets. These are the same values as our sentinels from before, only as they are stored in memory in little endian notation.
 During copy-and-patch compilation, we can replace these values with any value we want. 
+
+### Patching
 To give an example, say we want to replace the first stentinel with the value `0x02` and the second with the address of a function that prints the result, `0x000055aabbccdde0`. This procedure is as simple as writing new bytes to their locations in memory:
 
 ```
@@ -67,5 +68,5 @@ To give an example, say we want to replace the first stentinel with the value `0
 ```
 If we now call the function, `add_const(5)`, we now get the result `7`!
 
-By combining stencils in continuation-passing style, we are able to craft efficient machine code for programs from these granular stenils. This is the beautfy of copy-and-patch compilation!
+By combining stencils in continuation-passing style, we are able to craft efficient machine code for programs from these granular stenils. This is the beauty of copy-and-patch compilation!
 
