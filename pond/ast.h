@@ -100,8 +100,8 @@ typedef enum ExprKind {
 
 typedef struct BinOp {
   char* op;
-  Unit lhs;
-  Unit rhs;
+  char* lhs;
+  char* rhs;
 } BinOp;
 
 typedef struct Expr {
@@ -116,8 +116,8 @@ typedef struct Expr {
 } Expr;
 
 typedef struct Assign {
-  Type  type;
-  Unit  name;
+  Type type;
+  Unit name;
   Expr* expr;
 } Assign;
 

@@ -1,7 +1,5 @@
 #include "stdio.h"
 
-#define BL_STRINGBUILDER_IMPL
-#define BL_IMPL
 #include "../bl.h"
 
 #include "ast.h"
@@ -11,9 +9,15 @@ void indent(Parser* p) {
   add_to(p->output,  "%*s", p->indent, " ");
 }
 
+
+
 void print_pointer_call(Parser* p, PointerCall pc);
 void print_if_block(Parser* p, IfBlock ib);
 void print_block(Parser* p, Block* b);
+
+void print(Parser *p, char *str) {
+  add_to(p->output, str);
+}
 
 void print_unit(Parser *p, Unit u) {
   add_to(p->output, "%.*s", u.end-u.start, u.ptr);
@@ -55,9 +59,9 @@ void print_if_block(Parser* p, IfBlock ib) {
 }
 
 void print_binop(Parser *p, BinOp *e) {
-  print_unit(p, e->lhs);
+  print(p, e->lhs);
   add_to(p->output, " %s ", e->op);
-  print_unit(p, e->rhs);
+  print(p, e->rhs);
 }
 
 void print_expr(Parser* p, Expr* e) {
@@ -118,7 +122,7 @@ void print_block(Parser* p, Block* b) {
 void print_pointer_call(Parser *p, PointerCall f) {
   add_to(p->output, "((");
   print_type(p, f.return_type);
-  add_to(p->output, " (*))(");
+  add_to(p->output, " (*)(");
   fori(f.parameters.count) {
     print_type(p, f.parameters.entries[i].type);
     if (i < f.parameters.count-1) add_to(p->output, ", ");

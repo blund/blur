@@ -3,69 +3,60 @@
 #define BL_IMPL
 #include "bl.h"
 
+#include "pond/ast.h"
+#include "pond/parse.h"
+#include "pond/print.h"
+
+#include "stencil.h"
+
+FuncDecl *build_add_const_ast();
+FuncDecl *build_if_test_ast();
+
 StringBuilder* sb;
 
 typedef struct {
   char* name;
-  int num_holes;
-  char *code;
-  char *args;
+  int num_32_holes;
+  int num_64_holes;
+  StringBuilder* code;
 } PreStencil;
 
-#define num_stencils 3
-
-const char* arg0    = "0x0fefefe0";
-const char* arg0_64 = "0x0fefefef0fefefe0";
-const char* arg1    = "0x0fefefe1";
-const char* arg1_64 = "0x0fefefef0fefefe1";
-
-
-PreStencil add_pre = {
-    .name = "add",
-    .num_holes = 2,
-    .args = "uintptr_t stack, int lhs, int rhs",
-};
+#define num_stencils 2
 
 PreStencil add_const_pre = {
     .name = "add_const",
-    .num_holes = 2,
-    .args = "uintptr_t stack, int lhs",
+    .num_32_holes = 1,
+    .num_64_holes = 1,
 };
 
-PreStencil if_pre = {
+PreStencil if_test_pre = {
     .name = "if_test",
-    .num_holes = 2,
-    .args = "uintptr_t stack, int condition, int x",
+    .num_64_holes = 2,
 };
 
 PreStencil pres[num_stencils];
 
 
 int main() {
-  StringBuilder *sb;
+  FuncDecl *if_test_ast = build_if_test_ast();
+  FuncDecl *add_const_ast = build_add_const_ast();
 
-  // Build function for add
-  sb = new_builder(64);
-  add_to(sb, "int result = lhs + rhs; ");
-  add_to(sb, "((cps_int)(%s))(stack, result);", arg0_64);
-  add_pre.code = to_string(sb);
 
-  // Build function for add_const
-  sb = new_builder(64);
-  add_to(sb, "int result = lhs + %s; ", arg0);
-  add_to(sb, "((cps_int)(%s))(stack, result);", arg1_64);
-  add_const_pre.code = to_string(sb);
+  Parser p = {0};
+  // Construct add_const code
+  add_const_pre.code = new_builder(1024);
+  p.output = add_const_pre.code;
+  print_func_decl(&p, add_const_ast);
 
-  // Build function for if_test
-  sb = new_builder(64);
-  add_to(sb, "if (condition) { ((cps_int)(%s))(stack, x); } else { ((cps_int)(%s))(stack, x); }", arg0_64, arg1_64);
-  if_pre.code = to_string(sb);
+  // Construct if_pre_code
+  if_test_pre.code = new_builder(1024);
+  p.output = if_test_pre.code;
+  print_func_decl(&p, if_test_ast);
 
-  pres[0] = add_pre;
-  pres[1] = add_const_pre;
-  pres[2] = if_pre;
+  pres[0] = add_const_pre;
+  pres[1] = if_test_pre;
 
-  sb = new_builder(1024);
+  StringBuilder* sb = new_builder(1024);
 
   add_to(sb, "#include \"stddef.h\"\n");
   add_to(sb, "#include \"../stencil.h\"\n");
@@ -76,9 +67,7 @@ int main() {
   
     // The function (and end function to know its length)
     add_to(sb, "// Stencil generator for %s \n", pre.name);
-    add_to(sb, "void %s(%s) {\n", pre.name, pre.args);
-    add_to(sb, "\t%s\n", pre.code);
-    add_to(sb, "}\n");
+    add_to(sb, "%s\n", to_string(pre.code));
     add_to(sb, "void %s_end() {};\n", pre.name);
     add_to(sb, "\n");
   }
@@ -97,8 +86,8 @@ int main() {
   fori(num_stencils) {
     PreStencil pre = pres[i];
 
-    add_to(fun_list, "stencils[%d] = (Stencil){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t.num_holes = %d\n};\n",
-	   i, pre.name, pre.name, pre.name, pre.name, pre.num_holes);
+    add_to(fun_list, "stencils[%d] = (Stencil){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t.num_holes_32 = %d,\n\t.num_holes_64 = %d\n};\n",
+	   i, pre.name, pre.name, pre.name, pre.name, pre.num_32_holes, pre.num_64_holes);
   }
   add_to(fun_list, "};\n");
 
@@ -108,3 +97,48 @@ int main() {
   FILE *f = fopen("generated/stencils.h", "wb");
   fwrite(to_string(sb), 1, sb->index, f);
 }
+
+FuncDecl *build_if_test_ast() {
+    FuncDecl *if_test = new_func_decl("void", "if_test",
+				    (Parameters){.count = 3,
+						 .entries = {
+						   new_parameter("uintptr_t", "stack"),
+						   new_parameter("int", "condition"),
+						   new_parameter("int", "x"),
+						 }
+				    });
+  IfBlock *if_block = new_if_block(if_test->body);
+  new_pointer_call(if_block->body, "void", STR(big_hole_1),
+		   (Parameters){.count = 2,
+				.entries = {
+				  new_parameter("uintptr_t", "stack"),
+				  new_parameter("int", "x"),
+				}});
+  new_pointer_call(next_block(if_test->body), "void", STR(big_hole_2),
+		   (Parameters){
+		     .count = 2,
+		     new_parameter("uintptr_t", "stack"),
+		     new_parameter("int", "x"),
+		   });
+
+  return if_test;
+};
+FuncDecl *build_add_const_ast() {
+  FuncDecl *add_const =
+      new_func_decl("void", "add_const",
+                    (Parameters){.count = 2,
+                                 .entries = {
+                                     new_parameter("uintptr_t", "stack"),
+                                     new_parameter("int", "lhs"),
+                                 }});
+  Assign *a = new_assign(add_const->body, "int", "result");
+  new_binop(a->expr, "lhs", "+", STR(small_hole_1));
+  new_pointer_call(next_block(add_const->body), "void", STR(big_hole_1),
+		   (Parameters){
+		     .count = 2,
+		     new_parameter("uintptr_t", "stack"),
+		     new_parameter("int", "result"),
+		   });
+  return add_const;
+}
+

@@ -2,19 +2,19 @@
 
 # Run our actual "compiler"
 run: cut
-	gcc main.c -o blur
+	gcc -g main.c -o blur
 	@./blur
 
 # Cut out stencils
 cut: gen
 	@mkdir -p generated/stencils
-	gcc -O2 -fno-toplevel-reorder -fno-align-labels -fno-align-functions cut.c -o cut
+	@gcc -O1 -fno-toplevel-reorder -fno-align-labels -fno-align-functions cut.c -o cut
 	@./cut
 
 # Generate stencils
 gen:
 	@mkdir -p generated
-	gcc gen.c -o gen
+	gcc gen.c pond/parse.c pond/print.c -o gen
 	@./gen
 
 # Cleanup scripts :)

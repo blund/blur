@@ -24,6 +24,7 @@ void _release_assert(const char *assertionExpr, const char *assertionFile,
 float random_float(float min, float max);
 
 #define fori(x) for (int i = 0; i < x; i++)
+#define forj(x) for (int j = 0; j < x; j++)
 
 #ifdef BL_IMPL
 

@@ -28,8 +28,6 @@ Type make_type(char *str, int ptr) {
   return t;
 }
 
-
-
 void unit_set_start(Parser *p, Unit* u) {
   u->ptr = &p->code[p->index];
   u->start = p->index;
@@ -271,6 +269,7 @@ Expr* parse_expr(Parser* p) {
   return e;
 }
 
+
 Assign parse_assign(Parser* p) {
   eat_whitespace(p);
   p->ok = 1;
@@ -439,6 +438,12 @@ Block *new_block() {
   return b;
 }
 
+Block *next_block(Block *b) {
+  b->next = new_block();
+
+  return b->next;
+}
+
 Block* parse_block(Parser* p) {
   int i = p->index;
 
@@ -495,6 +500,34 @@ IfBlock *new_if_block(Block *b) {
   // s->if_block.body->statement->kind = statement_pointer_call_kind;
 
   return ib;
+}
+
+Assign *new_assign(Block *b, char* type, char* name) {
+  Statement *s = b->statement;
+  s->kind = statement_assign_kind;
+  Assign *assign = &s->assign;
+  assign->name = make_unit(name);
+  assign->type = make_type(type, 0);
+  assign->expr = malloc(sizeof(Expr));
+
+  return assign;
+}
+
+Return *new_return(Block *b) {
+  Statement *s = b->statement;
+  s->kind = statement_return_kind;
+  Return *r = &s->return_block;
+
+  return r;
+}
+
+BinOp* new_binop(Expr *expr, char *lhs, char *op, char *rhs) {
+  expr->kind = expr_binop_kind;
+  expr->binop.lhs = lhs;
+  expr->binop.op = op;
+  expr->binop.rhs = rhs;
+
+  return &expr->binop;
 }
 
 PointerCall *new_pointer_call(Block *b, char* ret, char* name, Parameters params) {

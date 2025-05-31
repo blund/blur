@@ -44,23 +44,19 @@ int main() {
 				 new_parameter("int", "x"),
 			       }
 		  });
-  IfBlock *ib = new_if_block(if_test->body);
-  PointerCall *ptr_call = new_pointer_call(ib->body, "void", "0xfefefef0",
-                                           (Parameters){.count = 2,
-                                                        .entries = {
-							  new_parameter("int", "a"),
-							  new_parameter("int", "b"),
-							}
-					   });
-  if_test->body->next = new_block();
-  {
-    Block *b = if_test->body->next;
-    PointerCall *ptr_call = new_pointer_call(b, "void", "0xfefefef1", (Parameters){
-	.count = 2,
-	new_parameter("int", "a"),
-	new_parameter("int", "b"),
-      });
-  }
+  IfBlock *if_block = new_if_block(if_test->body);
+  new_pointer_call(if_block->body, "void", "0xfefefef0",
+		   (Parameters){.count = 2,
+				.entries = {
+				  new_parameter("int", "a"),
+				  new_parameter("int", "b"),
+				}});
+  new_pointer_call(next_block(if_test->body), "void", "0xfefefef1",
+		   (Parameters){
+		     .count = 2,
+		     new_parameter("int", "a"),
+		     new_parameter("int", "b"),
+		   });
 
   char* buffer[1024];
 
@@ -79,13 +75,8 @@ int main() {
                                      new_parameter("uintptr_t", "stack"),
                                      new_parameter("int", "lhs"),
                                  }});
-  Block *body = add_const->body;
-  body->statement->kind = statement_return_kind;
-  Return *ret = &body->statement->return_block;
-  ret->expr.kind = expr_binop_kind;
-  ret->expr.binop.op = "+";
-  ret->expr.binop.lhs = make_unit("lhs");
-  ret->expr.binop.rhs = make_unit("const");
+  Return *r = new_return(add_const->body);
+  BinOp* b = new_binop(&r->expr, "lhs", "+", "rhs");
 
   puts("------------------");
   puts("generated code");
@@ -96,3 +87,4 @@ int main() {
   reset(p.output);
 
 }
+
