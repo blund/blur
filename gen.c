@@ -4,7 +4,7 @@
 #include "bl.h"
 
 #include "pond/ast.h"
-#include "pond/parse.h"
+#include "pond/build.h"
 #include "pond/print.h"
 
 #include "stencil.h"
