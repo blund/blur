@@ -212,10 +212,10 @@ PointerCall parse_pointer_call(Parser *p) {
   fori(8) {
     parse_exact(p, ')');
     if (p->ok) {
-      pointer_call.parameters.arg_count = i;
+      pointer_call.parameters.count = i;
       break;
     }
-    pointer_call.parameters.types[i] = parse_type(p);
+    pointer_call.parameters.entries[i].type = parse_type(p);
     parse_exact(p, ',');
   }
   // type params
@@ -235,10 +235,10 @@ PointerCall parse_pointer_call(Parser *p) {
   fori(8) {
     parse_exact(p, ')');
     if (p->ok) {
-      pointer_call.parameters.arg_count = i;
+      pointer_call.parameters.count = i;
       break;
     }
-    pointer_call.parameters.names[i] = parse_text(p);
+    pointer_call.parameters.entries[i].name = parse_text(p);
     parse_exact(p, ',');
   }
 
@@ -298,22 +298,30 @@ Assign parse_assign(Parser* p) {
 }
 
 Parameters parse_parameters(Parser *p) {
-  Parameters parameters = {.arg_count = 1};
+  Parameters parameters = {.count = 1};
+
   parse_exact(p, '(');
   fori(8) {
-    parameters.types[i] = parse_type(p);
-    parameters.names[i] =  parse_text(p);
+    parameters.entries[i].type = parse_type(p);
+    parameters.entries[i].name =  parse_text(p);
 
     parse_exact(p, ',');
     if (p->ok) continue;
 
     parse_exact(p, ')');
     if (p->ok) {
-      parameters.arg_count = i+1;
+      parameters.count = i+1;
       break;
     }
   }
   return parameters;
+}
+
+Parameter new_parameter(char *type, char *name) {
+  Parameter p;
+  p.name = make_unit(name);
+  p.type = make_type(type, 0);
+  return p;
 }
 
 FuncDecl *new_func_decl(char *ret_type, char *name, Parameters params) {

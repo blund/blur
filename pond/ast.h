@@ -1,6 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include "../bl.h"
+
 #define THIS p->code[p->index]
 #define NEXT p->code[p->index+1]
 #define DBG printf("DBG:\n%s\n\n", &THIS)
@@ -18,6 +20,7 @@ typedef struct Parser {
   int   ok;
 
   int indent;
+  StringBuilder* output;
 } Parser;
 
 typedef struct statement Statement;
@@ -47,6 +50,7 @@ typedef enum StatementKind {
   statement_call_kind,
   statement_pointer_call_kind,
   statement_if_kind,
+  statement_return_kind,
 } StatementKind;
 
 typedef struct Block {
@@ -59,18 +63,24 @@ typedef struct IfBlock {
   Block* body;
 } IfBlock;
 
+
+typedef struct Parameter {
+  Unit name;
+  Type type;
+} Parameter;
+
 typedef struct Parameters {
-  int  arg_count;
-  Unit names[8];
-  Type types[8];
+  int count;
+  Parameter entries[8];
 } Parameters;
 
 typedef struct FuncDecl {
   Unit    name;
-  Type    ret;
+  Type ret;
   Parameters parameters;
   Block*  body;
 } FuncDecl;
+
 
 typedef struct PointerCall {
   // Type
@@ -85,7 +95,14 @@ typedef struct PointerCall {
 typedef enum ExprKind {
   expr_call_kind,
   expr_value_kind,
+  expr_binop_kind,
 } ExprKind;
+
+typedef struct BinOp {
+  char* op;
+  Unit lhs;
+  Unit rhs;
+} BinOp;
 
 typedef struct Expr {
   ExprKind kind;
@@ -94,6 +111,7 @@ typedef struct Expr {
     PointerCall  pointer_call;
     Call  call;
     Value value;
+    BinOp binop;
   };
 } Expr;
 
@@ -103,6 +121,10 @@ typedef struct Assign {
   Expr* expr;
 } Assign;
 
+typedef struct Return {
+  Expr expr;
+} Return;
+
 typedef struct statement {
   StatementKind kind;
   union {
@@ -110,6 +132,7 @@ typedef struct statement {
     Call call;
     PointerCall pointer_call;
     IfBlock if_block;
+    Return return_block;
   };
 } Statement;
 

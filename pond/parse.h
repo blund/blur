@@ -10,6 +10,7 @@ Statement *new_statement();
 IfBlock *new_if_block(Block *b);
 PointerCall *new_pointer_call(Block *b, char* ret, char* name, Parameters params);
 FuncDecl *new_func_decl(char *ret_type, char *name, Parameters params);
+Parameter new_parameter(char *type, char *name);
 
 void parse_error(Parser* p, int start);
 
