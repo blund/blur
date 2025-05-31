@@ -75,13 +75,11 @@ typedef struct FuncDecl {
 typedef struct PointerCall {
   // Type
   Type return_type;
-  Type parameters[8];
-  int num_parameters;
 
   // Call
   Unit operand; // @TODO - this could be more general, we assume this to be a hex for now
-  int num_arguments;
-  Unit arguments[8];
+
+  Parameters parameters;
 } PointerCall;
 
 typedef enum ExprKind {

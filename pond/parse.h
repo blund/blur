@@ -3,8 +3,13 @@
 #include "ast.h"
 
 
+Type make_type(char *str, int ptr);
+Unit make_unit(char *str);
 Block *new_block();
 Statement *new_statement();
+IfBlock *new_if_block(Block *b);
+PointerCall *new_pointer_call(Block *b, char* ret, char* name, Parameters params);
+FuncDecl *new_func_decl(char *ret_type, char *name, Parameters params);
 
 void parse_error(Parser* p, int start);
 

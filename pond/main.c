@@ -26,29 +26,6 @@ void if_test(int a, int b) { \n\
   ((void (*)(int, int))(0x3232))(x, y);\n\
 }";
 
-Unit make_unit(char *str) {
-  Unit u;
-  u.ptr = str;
-  u.start = 0;
-  u.end = strlen(str);
-
-  return u;
-}
-
-Type make_type(char *str, int ptr) {
-  Type t;
-  Unit u;
-  u.ptr = str;
-  u.start = 0;
-  u.end = strlen(str);
-
-  t.name = u;
-  t.ptr = ptr;
-  return t;
-}
-
-
-
 int main() {
   Parser p = {
     .code = if_impl,
@@ -68,64 +45,33 @@ int main() {
 
   puts("");
 
-  FuncDecl f2;
-  f2.name = make_unit("if_test");
-  f2.ret = make_type("void", 0);
-
-  f2.parameters = (Parameters){
+  FuncDecl *fd = new_func_decl("void", "if_test", (Parameters){
       .arg_count = 3,
       .names = {make_unit("stack"), make_unit("condition"), make_unit("x")},
       .types = {make_type("uintptr_t", 0), make_type("int", 0), make_unit("int")},
-  };
-
-  f2.body = new_block();
+    });
+    IfBlock *ib = new_if_block(fd->body);
+    PointerCall *ptr_call = new_pointer_call(
+        ib->body, "void", "0xfefefef0",
+        (Parameters){
+            .arg_count = 2,
+            .names = {make_unit("a"), make_unit("b")},
+            .types = {make_type("int", 0), make_type("int", 0)},
+        });
+  fd->body->next = new_block();
   {
-    f2.body->statement = new_statement();
-    Statement *s = f2.body->statement;
-    s->kind = statement_if_kind;
-    s->if_block.condition = make_unit("condition");
-    s->if_block.body = new_block();
-    s->if_block.body->statement = new_statement();
-    s->if_block.body->statement->kind = statement_pointer_call_kind;
-    PointerCall *ptr_call = &s->if_block.body->statement->pointer_call;
-
-    ptr_call->operand = make_unit("0xfefefef0");
-    ptr_call->return_type = make_type("void", 0);
-
-    ptr_call->num_parameters = 2;
-    ptr_call->parameters[0] = make_type("int", 0);
-    ptr_call->parameters[1] = make_type("int", 0);
-
-    ptr_call->num_arguments = 2;
-    ptr_call->arguments[0] = make_unit("a");
-    ptr_call->arguments[1] = make_unit("b");
-  }
-  f2.body->next = new_block();
-  {
-    Block* b = f2.body->next;
-    b->statement = new_statement();
-    Statement *s = b->statement;
-    s->kind = statement_pointer_call_kind;
-    PointerCall *ptr_call = &s->pointer_call;
-
-    ptr_call->operand = make_unit("0xfefefef1");
-    ptr_call->return_type = make_type("void", 0);
-
-    ptr_call->num_parameters = 2;
-    ptr_call->parameters[0] = make_type("int", 0);
-    ptr_call->parameters[1] = make_type("int", 0);
-
-    ptr_call->num_arguments = 2;
-    ptr_call->arguments[0] = make_unit("a");
-    ptr_call->arguments[1] = make_unit("b");
+    Block *b = fd->body->next;
+    PointerCall *ptr_call = new_pointer_call(b, "void", "0xfefefef1", (Parameters){
+	.arg_count = 2,
+	.names = {make_unit("a"), make_unit("b")},
+	.types = {make_type("int", 0), make_type("int", 0)},
+      });
   }
 
+  char* buffer[1024];
 
   puts("------------------");
   puts("generated code");
   puts("------------------");
-  print_func_decl(&p, &f2);
-
-
-   
+  print_func_decl(&p, fd);
 }

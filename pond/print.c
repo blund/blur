@@ -101,16 +101,16 @@ void print_pointer_call(Parser *p, PointerCall f) {
   printf("((");
   print_type(p, f.return_type);
   printf(" (*))(");
-  fori(f.num_parameters) {
-    print_type(p, f.parameters[i]);
-    if (i < f.num_parameters-1) printf(", ");
+  fori(f.parameters.arg_count) {
+    print_type(p, f.parameters.types[i]);
+    if (i < f.parameters.arg_count-1) printf(", ");
   }
   printf("))(");
   print_unit(p, f.operand);
   printf("))(");
-  fori(f.num_arguments) {
-    print_unit(p, f.arguments[i]);
-    if (i < f.num_arguments-1) printf(", ");
+  fori(f.parameters.arg_count) {
+    print_unit(p, f.parameters.names[i]);
+    if (i < f.parameters.arg_count-1) printf(", ");
   }
   printf(")");
 }

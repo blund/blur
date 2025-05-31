@@ -7,6 +7,29 @@
 
 #include "../bl.h"
 
+Unit make_unit(char *str) {
+  Unit u;
+  u.ptr = str;
+  u.start = 0;
+  u.end = strlen(str);
+
+  return u;
+}
+
+Type make_type(char *str, int ptr) {
+  Type t;
+  Unit u;
+  u.ptr = str;
+  u.start = 0;
+  u.end = strlen(str);
+
+  t.name = u;
+  t.ptr = ptr;
+  return t;
+}
+
+
+
 void unit_set_start(Parser *p, Unit* u) {
   u->ptr = &p->code[p->index];
   u->start = p->index;
@@ -189,10 +212,10 @@ PointerCall parse_pointer_call(Parser *p) {
   fori(8) {
     parse_exact(p, ')');
     if (p->ok) {
-      pointer_call.num_parameters = i;
+      pointer_call.parameters.arg_count = i;
       break;
     }
-    pointer_call.parameters[i] = parse_type(p);
+    pointer_call.parameters.types[i] = parse_type(p);
     parse_exact(p, ',');
   }
   // type params
@@ -212,10 +235,10 @@ PointerCall parse_pointer_call(Parser *p) {
   fori(8) {
     parse_exact(p, ')');
     if (p->ok) {
-      pointer_call.num_arguments = i;
+      pointer_call.parameters.arg_count = i;
       break;
     }
-    pointer_call.arguments[i] = parse_text(p);
+    pointer_call.parameters.names[i] = parse_text(p);
     parse_exact(p, ',');
   }
 
@@ -291,6 +314,16 @@ Parameters parse_parameters(Parser *p) {
     }
   }
   return parameters;
+}
+
+FuncDecl *new_func_decl(char *ret_type, char *name, Parameters params) {
+  FuncDecl *fd = malloc(sizeof(FuncDecl));
+  fd->name = make_unit(name);
+  fd->ret = make_type(ret_type, 0);
+  fd->parameters = params;
+  fd->body = new_block();
+
+  return fd;
 }
 
 FuncDecl parse_func_decl(Parser* p) {
@@ -393,6 +426,7 @@ Statement* parse_statement(Parser* p) {
 
 Block *new_block() {
   Block *b = malloc(sizeof(Block));
+  b->statement = new_statement();
   b->next = 0;
   return b;
 }
@@ -439,6 +473,29 @@ Block* parse_scope(Parser* p) {
   }
 
   return b;
+}
+
+IfBlock *new_if_block(Block *b) {
+  Statement *s = b->statement;
+
+  s->kind = statement_if_kind;
+  IfBlock *ib = &s->if_block;
+
+  ib->condition = make_unit("condition");
+  ib->body = new_block();
+  ib->body->statement = new_statement();
+  // s->if_block.body->statement->kind = statement_pointer_call_kind;
+
+  return ib;
+}
+
+PointerCall *new_pointer_call(Block *b, char* ret, char* name, Parameters params) {
+  b->statement->kind = statement_pointer_call_kind;
+  PointerCall *ptr_call = &b->statement->pointer_call;
+  ptr_call->operand = make_unit(name);
+  ptr_call->return_type = make_type(ret, 0);
+  ptr_call->parameters = params;
+  return ptr_call;
 }
 
 IfBlock parse_if_block(Parser* p) {
