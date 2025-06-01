@@ -59,6 +59,19 @@ Statement *new_call(char* name, Arguments args) {
   return s;
 }
 
+Expression *new_call_expr(char* name, Arguments args) {
+  Expression *e = malloc(sizeof(Expression));
+  e->node_type = expression_node;
+  e->kind = call_expr;
+
+  Call* c = &e->call;
+  c->node_type = call_node;
+  c->name = name;
+  c->args = args;
+  return e;
+}
+
+
 Expression *new_identifier(char* name) {
   Expression* e = malloc(sizeof(Expression));
   e->node_type = expression_node;

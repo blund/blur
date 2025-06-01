@@ -108,6 +108,7 @@ Block *next_block(Block *prev, Statement *s);
 Statement *new_if(Expression *condition, Block *s1, Block *s2);
 Statement *new_assign(char *name, Expression *e);
 Statement *new_call(char *name, Arguments args);
+Expression *new_call_expr(char *name, Arguments args);
 Expression *new_identifier(char *name);
 Expression *new_integer(int n);
 void print_block(Block *b);
