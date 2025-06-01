@@ -124,21 +124,25 @@ UsedVarSet *clone_set(UsedVarSet *src) {
   return copy;
 }
 
-void collect_used_vars(NodeType type, void *node, void *ctx) {
-  UsedVarSet **set = ctx;
+void collect_used_vars(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
+  if (ctx->traversal != traversal) {
+    return;
+  }
+
+  UsedVarSet **set = ctx->data;
 
   switch (type) {
   case literal_node: {
     Literal *lit = node;
     if (lit->kind == identifier_lit) {
       hmput(*set, lit->identifier, 1);
-      printf("read %s\n", lit->identifier);
+      printf("  literal '%s'\n", lit->identifier);
     }
   } break;
 
   case assign_node: {
     Assign *a = node;
-    printf("assign %s\n", a->name);
+    printf("  assign '%s'\n", a->name);
     if (!hmget(*set, a->name)) {
       printf("DEAD: %s is never used\n", a->name);
     }
@@ -147,7 +151,7 @@ void collect_used_vars(NodeType type, void *node, void *ctx) {
   case block_node: {
     Block *b = node;
     b->used_vars = clone_set(*set);
-    dprintf("  set has %zu vars at block %p\n", hmlen(b->used_vars), b);
+    printf("Block %p\n", b);
   } break;
 
   default:
@@ -155,7 +159,8 @@ void collect_used_vars(NodeType type, void *node, void *ctx) {
   }
 }
 
-void print_nodes(NodeType type, void *node, void *ctx) {
+void print_nodes(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
+  if (ctx->traversal != traversal) {
   switch (type) {
   case literal_node: {
     Literal *lit = node;
@@ -174,10 +179,11 @@ void print_nodes(NodeType type, void *node, void *ctx) {
 
   case block_node: {
     Block *b = node;
-
-    for (int i = 0; i < hmlen(b->used_vars); ++i) {
-    printf("set has: %s\n", b->used_vars[i].key);
-  }
+    printf("Block %p\n", b);
+    if (b->count == 0) break;
+    //for (int i = 0; i < hmlen(b->used_vars); ++i) {
+    //  printf("%s\n", b->used_vars[i].key);
+    //}
   } break;
 
   case if_node: {
@@ -188,6 +194,7 @@ void print_nodes(NodeType type, void *node, void *ctx) {
 
   default:
     break;
+  }
   }
 }
 
@@ -203,12 +210,16 @@ int main() {
   print_block(b);
 
   // Traverse block to gather aliveness
-  UsedVarSet *set = NULL;
-  traverse_block(b, collect_used_vars, &set);
+  TraverseCtx ctx;
 
-  for (int i = 0; i < hmlen(set); ++i) {
-    printf("set has: %s\n", set[i].key);
-  }
+  UsedVarSet *set = NULL;
+  ctx = (TraverseCtx){.traversal=post_traversal, .data = &set};
+  traverse_block(b, collect_used_vars, &ctx);
+
+  puts("Printing ast:");
+  
+  ctx = (TraverseCtx){.traversal= pre_traversal, .data = NULL};
+  traverse_block(b, print_nodes, &ctx);
   
   ExecutableMemory em = make_executable_memory();
 
@@ -251,7 +262,7 @@ Block* example_ast() {
                                                        new_integer(4)}})),
                     new_block(new_call(
                         "add", (Arguments){.count = 2,
-                                           .entries = {new_identifier("test"),
+                                           .entries = {new_identifier("test2"),
                                                        new_integer(7)}}))));
   return b;
 }
