@@ -12,7 +12,6 @@
 
 #include "ast/ast.h"
 #include "ast/build.h"
-#include "ast/print.h"
 #include "ast/traverse.h"
 
 #include "stencil.h"
@@ -124,53 +123,133 @@ UsedVarSet *clone_set(UsedVarSet *src) {
   return copy;
 }
 
+void push_scope(UsedVarSet ***stack) {
+  UsedVarSet *empty = NULL;
+  arrput(*stack, empty);
+}
+
+UsedVarSet *pop_scope(UsedVarSet ***stack) {
+  return arrpop(*stack);
+}
+
 void collect_used_vars(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
-  if (ctx->traversal != traversal) {
+  UsedVarSet ***set_stack = ctx->data;
+  UsedVarSet **set = &arrlast(*set_stack);
+
+  if (traversal == pre_order) {
+    switch (type) {
+    case block_node: {
+      Block *b = node;
+      push_scope(set_stack);
+    } break;
+
+    default: break;
+    }
     return;
   }
 
-  UsedVarSet **set = ctx->data;
+  
+  if (traversal == post_order) {
+    switch (type) {
+    case block_node: {
+      Block *b = node;
+      UsedVarSet *popped = arrpop(*set_stack); // pop
 
-  switch (type) {
-  case literal_node: {
-    Literal *lit = node;
-    if (lit->kind == identifier_lit) {
-      hmput(*set, lit->identifier, 1);
-      printf("  literal '%s'\n", lit->identifier);
+      // Merge children’s used_vars
+      for (int i = 0; i < b->count; ++i) {
+	Statement *stmt = b->statements[i];
+
+	// If the statement contains a nested block (e.g., if-statement),
+	// you'll want to look inside that and merge its used_vars.
+        if (stmt->kind == if_statement) {
+	  If *ifstmt = &stmt->if_block;
+          if (ifstmt->then_branch) {
+            Block *branch = ifstmt->then_branch;
+	    merge_sets(&popped, ifstmt->then_branch->used_vars);
+	  }
+	  if (ifstmt->else_branch) {
+	    Block *branch = ifstmt->else_branch;
+	    merge_sets(&popped, ifstmt->else_branch->used_vars);
+	  }
+	}
+      }
+
+      b->used_vars = clone_set(popped);
+    } break;
+
+    case literal_node: {
+      Literal *lit = node;
+      if (lit->kind == identifier_lit) {
+	hmput(*set, lit->identifier, 1);
+	//printf("  literal '%s'\n", lit->identifier);
+      }
+    } break;
+
+    case assign_node: {
+      Assign *a = node;
+      //printf("  assign '%s'\n", a->name);
+      //if (!hmget(*set, a->name)) {
+	//printf("DEAD: %s is never used\n", a->name);
+      //}
+    } break;
+
+    default:
+      break;
     }
-  } break;
+  }
+}
 
-  case assign_node: {
-    Assign *a = node;
-    printf("  assign '%s'\n", a->name);
-    if (!hmget(*set, a->name)) {
-      printf("DEAD: %s is never used\n", a->name);
-    }
-  } break;
-
-  case block_node: {
-    Block *b = node;
-    b->used_vars = clone_set(*set);
-    printf("Block %p\n", b);
-  } break;
-
-  default:
-    break;
+void indent_(int depth) {
+  for (int i = 0; i < depth; ++i) {
+    printf("  "); // 2 spaces per level
   }
 }
 
 void print_nodes(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
-  if (ctx->traversal != traversal) {
+  int* depth = &ctx->data;
+
+  if (traversal == post_order) {
+    if (type == block_node) {
+      *depth -= 1;
+    }
+    if (type == assign_node) {
+      *depth -= 1;
+    }
+    if (type == if_node) {
+      *depth -= 1;
+    }
+  }
+
+  if (traversal == pre_order) {
   switch (type) {
   case literal_node: {
     Literal *lit = node;
+    indent_(*depth);
+
+    switch(lit->kind) {
+    case identifier_lit:
+      printf("(Literal ident %s)\n", lit->identifier);
+      break;
+
+    case integer_lit:
+      printf("(Literal int %d)\n", lit->integer);
+      break;
+
+
+    default: break;
+    }
   } break;
 
   case assign_node: {
+    indent_(*depth);
+    *depth += 1;
     Assign *a = node;
+    printf("(Assign)\n");
   } break;
 
   case call_node: {
+    indent_(*depth);
+    printf("Call\n");
     Call *c = node;
   } break;
 
@@ -178,15 +257,23 @@ void print_nodes(NodeType type, void *node, TraverseCtx *ctx, TraversalType trav
   } break;
 
   case block_node: {
+    indent_(*depth);
+    *depth += 1;
     Block *b = node;
-    printf("Block %p\n", b);
+    printf("(Block %p ", b);
     if (b->count == 0) break;
-    //for (int i = 0; i < hmlen(b->used_vars); ++i) {
-    //  printf("%s\n", b->used_vars[i].key);
-    //}
+    printf(" [used vars :");
+    for (int i = 0; i < hmlen(b->used_vars); ++i) {
+      printf(" %s,", b->used_vars[i].key);
+    }
+    printf("])\n");
+	   
   } break;
 
   case if_node: {
+    indent_(*depth);
+    *depth += 1;
+    printf("(If block)\n");
   } break;
 
   case expression_node: {
@@ -212,13 +299,18 @@ int main() {
   // Traverse block to gather aliveness
   TraverseCtx ctx;
 
-  UsedVarSet *set = NULL;
-  ctx = (TraverseCtx){.traversal=post_traversal, .data = &set};
+
+
+  UsedVarSet **set_stack = NULL;
+  UsedVarSet *initial_set = NULL;
+  arrput(set_stack, initial_set);
+  
+  ctx = (TraverseCtx){.traversal=post_order, .data = &set_stack};
   traverse_block(b, collect_used_vars, &ctx);
 
   puts("Printing ast:");
-  
-  ctx = (TraverseCtx){.traversal= pre_traversal, .data = NULL};
+ 
+  ctx = (TraverseCtx){.traversal= pre_order, .data = 0};
   traverse_block(b, print_nodes, &ctx);
   
   ExecutableMemory em = make_executable_memory();

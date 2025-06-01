@@ -4,8 +4,8 @@
 #include "ast.h"
 
 typedef enum {
-  pre_traversal,
-  post_traversal,
+  pre_order,
+  post_order,
 } TraversalType;
 
 typedef struct {
