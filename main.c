@@ -1,9 +1,17 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#define STB_DS_IMPLEMENTATION
+#include "include/stb_ds.h"
+
 #define BL_STRINGBUILDER_IMPL
 #define BL_IMPL
 #include "bl.h"
+
+#include "ast/ast.h"
+#include "ast/build.h"
+#include "ast/print.h"
+#include "ast/traverse.h"
 
 #include "stencil.h"
 
@@ -106,11 +114,21 @@ uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   return location;
 }
 
+Block* example_ast();
 int main() {
   dprintf(" Running copy-patch compiler...\n");
   Stencil add_stencil = read_stencil("generated/stencils/add_const.bin");
   Stencil if_stencil = read_stencil("generated/stencils/if_test.bin");
 
+  Block *b = example_ast();
+
+  print_block(b);
+
+  traverse_block(b);
+  for (int i = 0; i < hmlen(b->used_vars); ++i) {
+    printf("set has: %s\n", b->used_vars[i].key);
+  }
+  
   ExecutableMemory em = make_executable_memory();
 
   uint8_t *if_loc   = copy_stencil(&em, &if_stencil);
@@ -142,5 +160,17 @@ int main() {
   return 0;
 }
 
-
-
+Block* example_ast() {
+  Block *b = new_block(
+	     new_assign("test", new_integer(3)),
+             new_if(new_integer(1),
+                    new_block(new_call(
+                        "add", (Arguments){.count = 2,
+                                           .entries = {new_identifier("test"),
+                                                       new_integer(4)}})),
+                    new_block(new_call(
+                        "add", (Arguments){.count = 2,
+                                           .entries = {new_identifier("test"),
+                                                       new_integer(7)}}))));
+  return b;
+}

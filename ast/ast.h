@@ -1,3 +1,5 @@
+#ifndef BLUR_AST_H
+#define BLUR_AST_H
 
 typedef struct statement Statement;
 
@@ -91,3 +93,5 @@ Statement *new_call(char *name, Arguments args);
 Expression *new_identifier(char *name);
 Expression *new_integer(int n);
 void print_block(Block *b);
+
+#endif

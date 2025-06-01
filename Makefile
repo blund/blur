@@ -11,7 +11,7 @@ debug=-DDEBUG
 
 # Run our actual "compiler"
 run: cut
-	@$(cc) $(debug) -O2 main.c -o blur
+	@$(cc) $(debug) -O2 main.c ast/*.c -o blur
 	@./blur
 
 # Cut out stencils
@@ -40,8 +40,3 @@ clean-gen:
 clean-cut:
 	rm -rf stencils
 	rm cut
-
-
-ast:
-	$(cc) ast.c -o ast
-	./ast
