@@ -9,22 +9,22 @@
 #define STB_DS_IMPLEMENTATION
 #include "include/stb_ds.h"
 
-
 #include "ast/ast.h"
 #include "ast/build.h"
 #include "ast/traverse.h"
 #include "ast/traversers.h"
 
 #include "copy_and_patch.h"
-
 #include "stencil.h"
+
+
+Block *example_ast();
 
 // Functions used for testing cps functionlaity
 void print_result(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
 
-Block* example_ast();
 int main() {
   dprintf(" Running copy-patch compiler...\n");
   CompileContext cc;
