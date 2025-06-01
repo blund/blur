@@ -1,4 +1,4 @@
-.PHONY: cut gen
+.PHONY: cut gen ast
 
 # This should work with most C compilers, test at your own pleasure :)
 cc=zig cc
@@ -11,7 +11,7 @@ debug=-DDEBUG
 
 # Run our actual "compiler"
 run: cut
-	@$(cc) $(debug) -O2 -g main.c -o blur
+	@$(cc) $(debug) -O2 main.c -o blur
 	@./blur
 
 # Cut out stencils
@@ -42,3 +42,6 @@ clean-cut:
 	rm cut
 
 
+ast:
+	$(cc) ast.c -o ast
+	./ast
