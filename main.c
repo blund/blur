@@ -14,9 +14,12 @@
 #include "ast/traverse.h"
 #include "ast/traversers.h"
 
+#include "cps/cps.h"
+#include "cps/print.h"
+#include "cps/transform.h"
+
 #include "copy_and_patch.h"
 #include "stencil.h"
-
 
 Block *example_ast();
 
@@ -35,6 +38,8 @@ int main() {
   cc.loc_stack = NULL;
 
   Block *b = example_ast();
+  CpsNode *n = transform_ast(b);
+  print_cps_graph(n);
 
   // Traverse block to gather aliveness
   TraverseCtx ctx;

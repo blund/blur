@@ -11,7 +11,7 @@ debug=-DDEBUG
 
 # Run our actual "compiler"
 run: cut
-	@$(cc) $(debug) -g -O2 main.c stencil.c copy_and_patch.c ast/build.c ast/traverse.c  ast/traversers.c -o blur
+	@$(cc) $(debug) -g -O2 main.c stencil.c copy_and_patch.c ast/*.c cps/*.c -o blur
 	@./blur
 
 # Cut out stencils
