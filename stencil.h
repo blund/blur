@@ -31,4 +31,6 @@ typedef struct {
   int holes_64[4];
 } Stencil;
 
+Stencil read_stencil(char *file_path);
+
 #endif

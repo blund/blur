@@ -11,6 +11,16 @@
 #define dprintf(fmt, args...)
 #endif
 
+#define bl_assert(expr)							\
+  ((expr) ? ((void)0)							\
+   : _release_assert(#expr, __FILE__, __LINE__, __extension__ __PRETTY_FUNCTION__))
+#define assert bl_assert
+
+void _release_assert(const char *assertionExpr,
+		     const char *assertionFile,
+		     unsigned int assertionLine,
+		     const char* assertionFunction);
+
 
 typedef struct StringBuilder {
   char* buffer;
@@ -52,11 +62,6 @@ void _release_assert(const char *assertionExpr,
   fprintf(stderr, "%s:%u: %s: Assertion `%s' failed.\n", assertionFile, assertionLine, assertionFunction, assertionExpr);
   abort();
 }
-
-#define bl_assert(expr)							\
-  ((expr) ? ((void)0)							\
-   : _release_assert(#expr, __FILE__, __LINE__, __extension__ __PRETTY_FUNCTION__))
-#define assert bl_assert
 
 int read_file(const char* filename, char** out) {
     size_t size;
