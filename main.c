@@ -32,13 +32,16 @@ int main() {
   dprintf(" Running copy-patch compiler...\n");
   CompileContext cc;
   cc.mem = make_executable_memory();
-  cc.add_stencil = read_stencil("generated/stencils/add_const.bin");
-  cc.if_stencil = read_stencil("generated/stencils/if_test.bin");
+  cc.add_stencil         = read_stencil("generated/stencils/add_const.bin");
+  cc.if_stencil          = read_stencil("generated/stencils/if_test.bin");
   cc.stack_write_stencil = read_stencil("generated/stencils/stack_write.bin");
-  cc.print_result = &print_result;
+  cc.print_result        = &print_result;
   cc.loc_stack = NULL;
 
+  // Build example AST to compile
   Block *b = example_ast();
+
+  // Construct continuation passing style graph of our ast
   CpsNode *n = transform_ast(b);
   print_cps_graph(n);
 
