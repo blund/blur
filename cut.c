@@ -61,10 +61,9 @@ int main() {
       } 
     }
 
+    // Assert that we have identified a correct amount of holes!
     assert(holes_found_32 == s->num_holes_32);
     assert(holes_found_64 == s->num_holes_64);
-
-      
     assert(s->num_holes_32 < max_stencil_holes);
     assert(s->num_holes_64 < max_stencil_holes);
 

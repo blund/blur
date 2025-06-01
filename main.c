@@ -30,7 +30,6 @@ Stencil read_stencil(char *file_path) {
   dprintf("  -- Reading stencil at '%s'\n", file_path);
   char* raw;
   int file_size = read_file(file_path, &raw);
-  dprintf("    -- File Size: %d\n", file_size);
 
   // Read footer values from memory
   uint32_t *header = (uint32_t *)(raw);
@@ -44,7 +43,9 @@ Stencil read_stencil(char *file_path) {
   stencil.num_holes_32 = header[2];
   stencil.num_holes_64 = header[3];
   memcpy(&stencil.holes_32, &header[4], sizeof(uint32_t)*max_stencil_holes);
-  memcpy(&stencil.holes_64, &header[4+max_stencil_holes], sizeof(uint32_t)*max_stencil_holes);
+  memcpy(&stencil.holes_64, &header[4 + max_stencil_holes], sizeof(uint32_t) * max_stencil_holes);
+
+  dprintf("    -- Code Size: %d\n", stencil.code_size);
 
   dprintf("    -- 32-bit holes: %d\n", stencil.num_holes_32);
   fori(stencil.num_holes_32)
@@ -111,6 +112,7 @@ int main() {
   Stencil if_stencil = read_stencil("generated/stencils/if_test.bin");
 
   ExecutableMemory em = make_executable_memory();
+
   uint8_t *if_loc   = copy_stencil(&em, &if_stencil);
   uint8_t* add1_loc = copy_stencil(&em, &add_stencil);
   uint8_t* add2_loc = copy_stencil(&em, &add_stencil);
@@ -139,3 +141,6 @@ int main() {
 
   return 0;
 }
+
+
+
