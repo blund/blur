@@ -11,6 +11,7 @@
 
 FuncDecl *build_add_const_ast();
 FuncDecl *build_if_test_ast();
+FuncDecl *build_stack_write_ast();
 
 StringBuilder* sb;
 
@@ -21,7 +22,7 @@ typedef struct {
   StringBuilder* code;
 } PreStencil;
 
-#define num_stencils 2
+#define num_stencils 3
 
 PreStencil add_const_pre = {
     .name = "add_const",
@@ -34,6 +35,13 @@ PreStencil if_test_pre = {
     .num_64_holes = 2,
 };
 
+PreStencil stack_write_pre = {
+    .name = "stack_write",
+    .num_32_holes = 2,
+    .num_64_holes = 1,
+};
+
+
 PreStencil pres[num_stencils];
 
 
@@ -42,6 +50,7 @@ int main() {
 
   FuncDecl *if_test_ast = build_if_test_ast();
   FuncDecl *add_const_ast = build_add_const_ast();
+  FuncDecl *stack_write_ast = build_stack_write_ast();
 
   Parser p = {0};
 
@@ -55,8 +64,15 @@ int main() {
   p.output = if_test_pre.code;
   print_func_decl(&p, if_test_ast);
 
+  // Construct if_pre_code
+  stack_write_pre.code = new_builder(1024);
+  p.output = stack_write_pre.code;
+  print_func_decl(&p, stack_write_ast);
+
+
   pres[0] = add_const_pre;
   pres[1] = if_test_pre;
+  pres[2] = stack_write_pre;
 
   StringBuilder* sb = new_builder(1024);
 
@@ -144,4 +160,22 @@ FuncDecl *build_add_const_ast() {
 		     new_parameter("int", "result"),
 		   });
   return add_const;
+}
+
+FuncDecl *build_stack_write_ast() {
+  FuncDecl *stack_write =
+    new_func_decl("void", "stack_write",
+		  (Parameters){.count = 1,
+			       .entries = {
+				 new_parameter("uintptr_t", "stack"),
+			       }});
+  new_array_write(stack_write->body, "stack", STR(small_hole_1),
+                  STR(small_hole_2));
+  new_pointer_call(next_block(stack_write->body), "void", STR(big_hole_1),
+		   (Parameters){
+		     .count = 1,
+		     new_parameter("uintptr_t", "stack"),
+		   });
+
+  return stack_write;
 }

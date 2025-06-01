@@ -15,5 +15,6 @@ Return *new_return(Block *b);
 BinOp* new_binop(Expr *expr, char *lhs, char *op, char *rhs);
 Block *next_block(Block *b);
 Assign *new_assign(Block *b, char* type, char* name);
+ArrayWrite* new_array_write(Block *b, char* array, char *index, char* value);
 
 #endif

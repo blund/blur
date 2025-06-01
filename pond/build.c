@@ -98,6 +98,16 @@ Return *new_return(Block *b) {
   return r;
 }
 
+ArrayWrite* new_array_write(Block *b, char* array, char *index, char* value) {
+  Statement *s = b->statement;
+  s->kind = statement_array_write_kind;
+  ArrayWrite *a = &s->array_write;
+  a->array = make_unit(array);
+  a->index = make_unit(index);
+  a->value = make_unit(value);
+  return a;
+}
+
 BinOp* new_binop(Expr *expr, char *lhs, char *op, char *rhs) {
   expr->kind = expr_binop_kind;
   expr->binop.lhs = lhs;

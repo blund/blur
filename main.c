@@ -34,6 +34,7 @@ int main() {
   cc.mem = make_executable_memory();
   cc.add_stencil = read_stencil("generated/stencils/add_const.bin");
   cc.if_stencil = read_stencil("generated/stencils/if_test.bin");
+  cc.stack_write_stencil = read_stencil("generated/stencils/stack_write.bin");
   cc.print_result = &print_result;
   cc.loc_stack = NULL;
 

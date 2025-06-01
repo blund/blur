@@ -51,6 +51,7 @@ typedef enum StatementKind {
   statement_pointer_call_kind,
   statement_if_kind,
   statement_return_kind,
+  statement_array_write_kind,
 } StatementKind;
 
 typedef struct Block {
@@ -116,6 +117,12 @@ typedef struct Expr {
   };
 } Expr;
 
+typedef struct {
+  Unit array;
+  Unit index;
+  Unit value;
+} ArrayWrite;
+
 typedef struct Assign {
   Type type;
   Unit name;
@@ -134,6 +141,7 @@ typedef struct statement {
     PointerCall pointer_call;
     IfBlock if_block;
     Return return_block;
+    ArrayWrite array_write;
   };
 } Statement;
 

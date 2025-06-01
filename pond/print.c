@@ -9,8 +9,6 @@ void indent(Parser* p) {
   add_to(p->output,  "%*s", p->indent, " ");
 }
 
-
-
 void print_pointer_call(Parser* p, PointerCall pc);
 void print_if_block(Parser* p, IfBlock ib);
 void print_block(Parser* p, Block* b);
@@ -45,6 +43,17 @@ void print_call(Parser* p, Call c) {
   add_to(p->output, "()");
 }
 
+void print_array_write(Parser *p, ArrayWrite *aw) {
+  add_to(p->output, "*(int*)(");
+  print_unit(p, aw->array);
+  print(p, "+");
+  print_unit(p, aw->index);
+  print(p, ") = ");
+  print_unit(p, aw->value);
+  print(p, ";\n");
+}
+
+
 void print_if_block(Parser* p, IfBlock ib) {
   add_to(p->output, "if (");
   print_unit(p, ib.condition);
@@ -66,6 +75,13 @@ void print_if_block(Parser* p, IfBlock ib) {
   add_to(p->output, "}\n");
 
 }
+
+// ArrayWrite* new_array_write(Block *b, char* array, char *index, Expr *value)
+// {
+/*
+void print_array_index(Parser *p, ArrayIndex *a) {
+}
+*/
 
 void print_binop(Parser *p, BinOp *e) {
   print(p, e->lhs);
@@ -104,6 +120,9 @@ void print_statement(Parser *p, Statement *s) {
   }
   if (s->kind == statement_return_kind) {
     print_return_block(p, &s->return_block);
+  }
+  if (s->kind == statement_array_write_kind) {
+    print_array_write(p, &s->array_write);
   }
 }
 
