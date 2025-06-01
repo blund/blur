@@ -116,6 +116,14 @@ uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   return location;
 }
 
+UsedVarSet *clone_set(UsedVarSet *src) {
+  UsedVarSet *copy = NULL;
+  for (int i = 0; i < hmlen(src); ++i) {
+    hmput(copy, src[i].key, 1);
+  }
+  return copy;
+}
+
 void collect_used_vars(NodeType type, void *node, void *ctx) {
   UsedVarSet **set = ctx;
 
@@ -136,13 +144,40 @@ void collect_used_vars(NodeType type, void *node, void *ctx) {
     }
   } break;
 
+  case block_node: {
+    Block *b = node;
+    b->used_vars = clone_set(*set);
+    dprintf("  set has %zu vars at block %p\n", hmlen(b->used_vars), b);
+  } break;
+
+  default:
+    break;
+  }
+}
+
+void print_nodes(NodeType type, void *node, void *ctx) {
+  switch (type) {
+  case literal_node: {
+    Literal *lit = node;
+  } break;
+
+  case assign_node: {
+    Assign *a = node;
+  } break;
+
   case call_node: {
+    Call *c = node;
   } break;
 
   case statement_node: {
   } break;
 
   case block_node: {
+    Block *b = node;
+
+    for (int i = 0; i < hmlen(b->used_vars); ++i) {
+    printf("set has: %s\n", b->used_vars[i].key);
+  }
   } break;
 
   case if_node: {
@@ -170,6 +205,7 @@ int main() {
   // Traverse block to gather aliveness
   UsedVarSet *set = NULL;
   traverse_block(b, collect_used_vars, &set);
+
   for (int i = 0; i < hmlen(set); ++i) {
     printf("set has: %s\n", set[i].key);
   }
