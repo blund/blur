@@ -2,76 +2,68 @@
 
 #include "../include/stb_ds.h"
 #include "../bl.h"
+void merge_sets(UsedVarSet **dst, UsedVarSet *src) {
+  for (int i = 0; i < hmlen(src); ++i) {
+    hmput(*dst, src[i].key, 1);
+  }
+}
 
-
-void traverse_lit(Literal *l, UsedVarSet **set) {
+void traverse_lit(Literal *l, Visit v, void *ctx) {
   switch (l->kind) {
   case integer_lit: break;
   case floating_lit: break;
   case string_lit: break;
-  case identifier_lit: {
-    hmput(*set, l->identifier, 1);
-    printf("read %s\n", l->identifier); 
-  } break;
+  case identifier_lit: break;
   }
+  v(l->node_type, l, ctx);
 }
 
 
-void traverse_expr(Expression *e, UsedVarSet **set);
-void traverse_call(Call *c, UsedVarSet **set) {
+void traverse_expr(Expression *e, Visit v, void* ctx);
+void traverse_call(Call *c, Visit v, void* ctx) {
   fori(c->args.count) {
-    traverse_expr(c->args.entries[i], set);
+    traverse_expr(c->args.entries[i], v, ctx);
   }
+  v(c->node_type, c, ctx);
 }
 
-void traverse_expr(Expression *e, UsedVarSet **set) {
+void traverse_expr(Expression *e, Visit v, void* ctx) {
   switch (e->kind) {
-  case call_expr: traverse_call(&e->call, set);
-  case lit_expr: traverse_lit(&e->lit, set);
+  case call_expr: traverse_call(&e->call, v, ctx); break;
+  case lit_expr: traverse_lit(&e->lit, v, ctx); break;
   }
+  v(e->node_type, e, ctx);
 }
 
-void traverse_assign(Assign *a, UsedVarSet **set) {
-  printf("assign %s\n", a->name);
-  traverse_expr(a->expr, set);
-  if (!hmget(*set, a->name)) {
-    // @TODO - handle dead code
-  }
-  // @TODO - how do we check if the variable was never defined?
+void traverse_assign(Assign *a, Visit v, void* ctx) {
+  traverse_expr(a->expr, v, ctx);
+  v(a->node_type, a, ctx);
 }
 
 
-void traverse_block(Block *b);
+void traverse_block(Block *b, Visit v, void* ctx);
 
-void merge_sets(UsedVarSet **dst, UsedVarSet *src) {
-    for (int i = 0; i < hmlen(src); ++i) {
-        hmput(*dst, src[i].key, 1);
-    }
-}
-
-void traverse_if(If *i, UsedVarSet **set) {
-  traverse_expr(i->condition, set);
-  traverse_block(i->then_branch);
-  merge_sets(set, i->then_branch->used_vars);
+void traverse_if(If *i, Visit v, void* ctx) {
+  traverse_expr(i->condition, v, ctx);
+  traverse_block(i->then_branch, v, ctx);
   if (i->else_branch) {
-    traverse_block(i->else_branch);
-    merge_sets(set, i->else_branch->used_vars);
+    traverse_block(i->else_branch, v, ctx);
   }
+  v(i->node_type, i, ctx);
 }
 
-void traverse_statement(Statement *s, UsedVarSet **set) {
+void traverse_statement(Statement *s, Visit v, void* ctx) {
   switch (s->kind) {
-  case assign_statement: traverse_assign(&s->assign, set); break;
-  case call_statement: traverse_call(&s->call, set); break;
-  case if_statement: traverse_if(&s->if_block, set); break;
+  case assign_statement: traverse_assign(&s->assign, v, ctx); break;
+  case call_statement: traverse_call(&s->call, v, ctx); break;
+  case if_statement: traverse_if(&s->if_block, v, ctx); break;
   }
+  v(s->node_type, s, ctx);
 }
 
-void traverse_block(Block *b) {
-  UsedVarSet *set = NULL;
-
+void traverse_block(Block *b, Visit v, void* ctx) {
   fori(b->count) {
-    traverse_statement(b->statements[i], &set);
+    traverse_statement(b->statements[i], v, ctx);
   }
-  b->used_vars = set;
+  v(b->node_type, b, ctx);
 }

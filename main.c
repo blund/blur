@@ -114,6 +114,47 @@ uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   return location;
 }
 
+void operate(NodeType nt, void *data, void *ctx) {
+  if (nt == block_node) {
+    printf("block!\n");
+  }
+}
+
+void collect_used_vars(NodeType type, void *node, void *ctx) {
+  UsedVarSet **set = ctx;
+
+  switch (type) {
+  case literal_node: {
+    Literal *lit = node;
+    if (lit->kind == identifier_lit) {
+      hmput(*set, lit->identifier, 1);
+      printf("read %s\n", lit->identifier);
+    }
+    break;
+  }
+
+  case assign_node: {
+    Assign *a = node;
+    printf("assign %s\n", a->name);
+    if (!hmget(*set, a->name)) {
+      printf("DEAD: %s is never used\n", a->name);
+    }
+    hmdel(*set, a->name);  // var is no longer alive not live anymore
+    break;
+  }
+
+  case call_node:
+  case statement_node:
+  case block_node:
+  case if_node:
+  case expression_node:
+    break;
+
+  default:
+    break;
+  }
+}
+
 Block* example_ast();
 int main() {
   dprintf(" Running copy-patch compiler...\n");
@@ -124,9 +165,14 @@ int main() {
 
   print_block(b);
 
+  /*
   traverse_block(b);
-  for (int i = 0; i < hmlen(b->used_vars); ++i) {
-    printf("set has: %s\n", b->used_vars[i].key);
+  */
+
+  UsedVarSet *set = NULL;
+  traverse_block(b, collect_used_vars, &set);
+  for (int i = 0; i < hmlen(set); ++i) {
+    printf("set has: %s\n", set[i].key);
   }
   
   ExecutableMemory em = make_executable_memory();

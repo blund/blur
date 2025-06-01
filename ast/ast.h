@@ -8,8 +8,19 @@ typedef struct {
   int value;  // can be anything; `true` is good enough
 } UsedVarSet;
 
+typedef enum {
+  block_node,
+  literal_node,
+  argument_node,
+  call_node,
+  expression_node,
+  if_node,
+  assign_node,
+  statement_node,
+} NodeType;
 
 typedef struct Block {
+  NodeType node_type;
   int count;
   Statement **statements;
 
@@ -24,6 +35,7 @@ typedef enum {
 } LiteralKind;
 
 typedef struct {
+  NodeType node_type;
   LiteralKind kind;
   union {
     int   integer;
@@ -41,16 +53,19 @@ typedef enum {
 typedef struct expression Expression;
 
 typedef struct {
+  NodeType node_type;
   int count;
   struct expression *entries[8];
 } Arguments;
 
 typedef struct Call {
+  NodeType node_type;
   char *name;
   Arguments args;
 } Call;
 
 typedef struct expression {
+  NodeType node_type;
   ExpressionKind kind;
   union {
     Literal lit;
@@ -59,12 +74,14 @@ typedef struct expression {
 } Expression;
 
 typedef struct {
+  NodeType node_type;
   Expression *condition;
   Block *then_branch;
   Block *else_branch;
 } If;
 
 typedef struct {
+  NodeType node_type;
   char *name;
   Expression *expr;
 } Assign;
@@ -76,6 +93,7 @@ typedef enum StatementKind {
 } StatementKind;
 
 typedef struct statement {
+  NodeType node_type;
   StatementKind kind;
   union {
     Assign assign;

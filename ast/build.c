@@ -10,7 +10,8 @@
 
 Block *new_block_multi(int count, ...) {
   static int counter = 0;
-    Block *b = calloc(1, sizeof(Block));
+  Block *b = calloc(1, sizeof(Block));
+  b->node_type = block_node;
     b->statements = NULL;
     b->count = count;
 
@@ -26,6 +27,8 @@ Block *new_block_multi(int count, ...) {
 
 Statement *new_if(Expression* condition, Block *s1, Block* s2) {
   Statement *s = malloc(sizeof(Statement));
+  s->node_type = statement_node;
+
   s->kind = if_statement;
   If *i = &s->if_block;
   i->condition = condition;
@@ -36,6 +39,7 @@ Statement *new_if(Expression* condition, Block *s1, Block* s2) {
 
 Statement *new_assign(char* name, Expression* e) {
   Statement *s = malloc(sizeof(Statement));
+  s->node_type = statement_node;
   s->kind = assign_statement;
   Assign* a = &s->assign;
   a->name = name;
@@ -45,6 +49,7 @@ Statement *new_assign(char* name, Expression* e) {
 
 Statement *new_call(char* name, Arguments args) {
   Statement *s = malloc(sizeof(Statement));
+  s->node_type = statement_node;
   s->kind = call_statement;
   s->call.name = name;
   s->call.args = args;
@@ -53,14 +58,16 @@ Statement *new_call(char* name, Arguments args) {
 
 Expression *new_identifier(char* name) {
   Expression* e = malloc(sizeof(Expression));
+  e->node_type = expression_node;
   e->kind = lit_expr;
-  e->lit = (Literal){.kind = identifier_lit, .identifier = name};
+  e->lit = (Literal){.node_type = literal_node, .kind = identifier_lit, .identifier = name};
   return e;
 }
 
 Expression *new_integer(int n) {
   Expression* e = malloc(sizeof(Expression));
+  e->node_type = expression_node;
   e->kind = lit_expr;
-  e->lit = (Literal){.kind = integer_lit, .integer = n};
+  e->lit = (Literal){.node_type = literal_node, .kind = integer_lit, .integer = n};
   return e;
 }

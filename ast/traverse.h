@@ -5,13 +5,15 @@
 
 void merge_sets(UsedVarSet **dst, UsedVarSet *src);
 
-void traverse_lit(Literal *l, UsedVarSet **set);
-void traverse_expr(Expression *e, UsedVarSet **set);
-void traverse_call(Call *c, UsedVarSet **set);
-void traverse_assign(Assign *a, UsedVarSet **set);
-void traverse_block(Block *b);
-void traverse_if(If *i, UsedVarSet **set);
-void traverse_statement(Statement *s, UsedVarSet **set);
-void traverse_block(Block *b);
+typedef void (*Visit)(NodeType nt, void* data, void* ctx);
+
+void traverse_lit(Literal *l, Visit v, void* ctx);
+void traverse_expr(Expression *e, Visit v, void* ctx);
+void traverse_call(Call *c, Visit v, void* ctx);
+void traverse_assign(Assign *a, Visit v, void* ctx);
+void traverse_block(Block *b, Visit v, void* ctx);
+void traverse_if(If *i, Visit v, void* ctx);
+void traverse_statement(Statement *s, Visit v, void* ctx);
+void traverse_block(Block *b, Visit v, void* ctx);
 
 #endif
