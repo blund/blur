@@ -1,12 +1,14 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#define STB_DS_IMPLEMENTATION
-#include "include/stb_ds.h"
-
 #define BL_STRINGBUILDER_IMPL
 #define BL_IMPL
 #include "bl.h"
+
+#define STB_DS_ASSERT assert
+#define STB_DS_IMPLEMENTATION
+#include "include/stb_ds.h"
+
 
 #include "ast/ast.h"
 #include "ast/build.h"
@@ -155,6 +157,7 @@ void collect_used_vars(NodeType type, void *node, void *ctx) {
   }
 }
 
+
 Block* example_ast();
 int main() {
   dprintf(" Running copy-patch compiler...\n");
@@ -165,10 +168,7 @@ int main() {
 
   print_block(b);
 
-  /*
-  traverse_block(b);
-  */
-
+  // Traverse block to gather aliveness
   UsedVarSet *set = NULL;
   traverse_block(b, collect_used_vars, &set);
   for (int i = 0; i < hmlen(set); ++i) {
