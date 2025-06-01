@@ -66,7 +66,7 @@ void copy_and_patch(NodeType type, void *node, TraverseCtx *ctx, TraversalType t
     } break;
 
     case if_node: {
-      uint8_t *if_loc   = copy_stencil(&cc->mem, &cc->if_stencil);
+      uint8_t *if_loc = copy_stencil(&cc->mem, &cc->if_stencil);
       arrput(cc->loc_stack, if_loc);
     } break;
 

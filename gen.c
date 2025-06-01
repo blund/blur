@@ -145,4 +145,3 @@ FuncDecl *build_add_const_ast() {
 		   });
   return add_const;
 }
-

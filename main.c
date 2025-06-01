@@ -61,7 +61,7 @@ int main() {
 
   // Call the compiled code
   void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))cc.mem.code;
-  func(stack, 1, 2);
+  func(stack, 0, 2);
   
   return 0;
 }
