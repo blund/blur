@@ -61,8 +61,8 @@ void traverse_statement(Statement *s, Visit v, void* ctx) {
   v(s->node_type, s, ctx);
 }
 
-void traverse_block(Block *b, Visit v, void* ctx) {
-  fori(b->count) {
+void traverse_block(Block *b, Visit v, void *ctx) {
+  for(int i = b->count-1;  i >= 0; i--) {
     traverse_statement(b->statements[i], v, ctx);
   }
   v(b->node_type, b, ctx);

@@ -116,12 +116,6 @@ uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   return location;
 }
 
-void operate(NodeType nt, void *data, void *ctx) {
-  if (nt == block_node) {
-    printf("block!\n");
-  }
-}
-
 void collect_used_vars(NodeType type, void *node, void *ctx) {
   UsedVarSet **set = ctx;
 
@@ -132,8 +126,7 @@ void collect_used_vars(NodeType type, void *node, void *ctx) {
       hmput(*set, lit->identifier, 1);
       printf("read %s\n", lit->identifier);
     }
-    break;
-  }
+  } break;
 
   case assign_node: {
     Assign *a = node;
@@ -141,16 +134,22 @@ void collect_used_vars(NodeType type, void *node, void *ctx) {
     if (!hmget(*set, a->name)) {
       printf("DEAD: %s is never used\n", a->name);
     }
-    hmdel(*set, a->name);  // var is no longer alive not live anymore
-    break;
-  }
+  } break;
 
-  case call_node:
-  case statement_node:
-  case block_node:
-  case if_node:
-  case expression_node:
-    break;
+  case call_node: {
+  } break;
+
+  case statement_node: {
+  } break;
+
+  case block_node: {
+  } break;
+
+  case if_node: {
+  } break;
+
+  case expression_node: {
+  } break;
 
   default:
     break;
