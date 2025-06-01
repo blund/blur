@@ -22,13 +22,19 @@ typedef struct {
   int capacity;
 } ExecutableMemory;
 
+typedef struct {
+  ExecutableMemory mem;
+  Stencil add_stencil;
+  Stencil if_stencil;
+  uint8_t** loc_stack;
+} CompileContext;
+
 // Functions used for testing cps functionlaity
 void print_result(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
 void choice_a(uintptr_t stack) { puts("a!"); }
 void choice_b(uintptr_t stack) { puts("b!"); }
-
 
 uint32_t blur_tag = 0x72756C62;
 uint32_t code_tag = 0x636f6465;
@@ -206,7 +212,7 @@ void indent_(int depth) {
 }
 
 void print_nodes(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
-  int* depth = &ctx->data;
+  int* depth = (int*)&ctx->data;
 
   if (traversal == post_order) {
     if (type == block_node) {
@@ -285,62 +291,92 @@ void print_nodes(NodeType type, void *node, TraverseCtx *ctx, TraversalType trav
   }
 }
 
+void copy_and_patch(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
+
+  CompileContext *cc = ctx->data;
+
+  static UsedVarSet* set;
+
+  if (traversal == pre_order) {
+    switch (type) {
+
+    case block_node: {
+      Block* b = node;
+      set = b->used_vars;
+    } break;
+
+    case call_node: {
+      Call *c = node;
+      uint8_t *add_loc = copy_stencil(&cc->mem, &cc->add_stencil);
+
+      patch_hole_32(add_loc, &cc->add_stencil, 0, c->args.entries[1]->lit.integer);
+      patch_hole_64(add_loc, &cc->add_stencil, 0, (uint64_t)print_result);
+
+      arrput(cc->loc_stack, add_loc);
+    } break;
+
+    case if_node: {
+      uint8_t *if_loc   = copy_stencil(&cc->mem, &cc->if_stencil);
+      arrput(cc->loc_stack, if_loc);
+    } break;
+
+    default:
+      break;
+    }
+  }
+
+  if (traversal == post_order) {
+    if (type == if_node) {
+      uint8_t* add1_loc = arrpop(cc->loc_stack);
+      uint8_t* add2_loc = arrpop(cc->loc_stack);
+      uint8_t *if_loc = arrpop(cc->loc_stack);
+      patch_hole_64(if_loc, &cc->if_stencil, 0, (uint64_t)add1_loc);
+      patch_hole_64(if_loc, &cc->if_stencil, 1, (uint64_t)add2_loc);
+
+    }
+  }
+
+}
 
 Block* example_ast();
 int main() {
   dprintf(" Running copy-patch compiler...\n");
-  Stencil add_stencil = read_stencil("generated/stencils/add_const.bin");
-  Stencil if_stencil = read_stencil("generated/stencils/if_test.bin");
+  CompileContext cc;
+  cc.mem = make_executable_memory();
+  cc.add_stencil = read_stencil("generated/stencils/add_const.bin");
+  cc.if_stencil = read_stencil("generated/stencils/if_test.bin");
+  cc.loc_stack = NULL;
 
   Block *b = example_ast();
-
-  print_block(b);
 
   // Traverse block to gather aliveness
   TraverseCtx ctx;
 
-
-
   UsedVarSet **set_stack = NULL;
   UsedVarSet *initial_set = NULL;
   arrput(set_stack, initial_set);
-  
+
+  // Find all used vars in blocks
   ctx = (TraverseCtx){.traversal=post_order, .data = &set_stack};
   traverse_block(b, collect_used_vars, &ctx);
 
-  puts("Printing ast:");
+  dprintf("Printing ast...\n");
  
+  // Print AST
   ctx = (TraverseCtx){.traversal= pre_order, .data = 0};
   traverse_block(b, print_nodes, &ctx);
-  
-  ExecutableMemory em = make_executable_memory();
 
-  uint8_t *if_loc   = copy_stencil(&em, &if_stencil);
-  uint8_t* add1_loc = copy_stencil(&em, &add_stencil);
-  uint8_t* add2_loc = copy_stencil(&em, &add_stencil);
+  // Build executable
+  ctx = (TraverseCtx){.traversal= pre_order, .data = &cc};
+  traverse_block(b, copy_and_patch, &ctx);
 
-  // Patch the holes!
-  patch_hole_32(add1_loc, &add_stencil, 0, 4);
-  patch_hole_64(add1_loc, &add_stencil, 0, (uint64_t)print_result);
-
-  patch_hole_32(add2_loc, &add_stencil, 0, 30);
-  patch_hole_64(add2_loc, &add_stencil, 0, (uint64_t)print_result);
-
-  patch_hole_64(if_loc, &if_stencil, 0, (uint64_t)add1_loc);
-  patch_hole_64(if_loc, &if_stencil, 1, (uint64_t)add2_loc);
-
-  // Initialize our stack (unused)
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
 
   // Call the modified machine code
-  void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))em.code;
-  func(stack, 0, 2);
-
-  // Clean up
-  //free(stencil.code);
-  munmap(em.code, em.capacity);
-
+  void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))cc.mem.code;
+  func(stack, 1, 2);
+  
   return 0;
 }
 
@@ -354,7 +390,7 @@ Block* example_ast() {
                                                        new_integer(4)}})),
                     new_block(new_call(
                         "add", (Arguments){.count = 2,
-                                           .entries = {new_identifier("test2"),
+                                           .entries = {new_identifier("test"),
                                                        new_integer(7)}}))));
   return b;
 }
