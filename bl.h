@@ -11,9 +11,11 @@
 #define dprintf(fmt, args...)
 #endif
 
-#define bl_assert(expr)							\
-  ((expr) ? ((void)0)							\
-   : _release_assert(#expr, __FILE__, __LINE__, __extension__ __PRETTY_FUNCTION__))
+#define bl_assert(expr)                                                        \
+  ((expr) ? ((void)0)                                                          \
+          : _release_assert(#expr, __FILE__, __LINE__,                         \
+                            __extension__ __PRETTY_FUNCTION__))
+#undef assert
 #define assert bl_assert
 
 void _release_assert(const char *assertionExpr,
