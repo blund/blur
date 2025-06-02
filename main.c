@@ -34,8 +34,10 @@ int main() {
   cc.print_result = &print_result;
   cc.stencils = NULL;
 
-  hmput(cc.stencils, "add", read_stencil("generated/stencils/add_const.bin"));
-  hmput(cc.stencils, "if",  read_stencil("generated/stencils/if_test.bin"));
+  CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
+  hmput(cc.stencils, add_cs, read_stencil("generated/stencils/add_const.bin"));
+  CallSignature if_cs = {"if", {ARG_REG, ARG_IMM}};
+  hmput(cc.stencils, if_cs,  read_stencil("generated/stencils/if_test.bin"));
 
   // Build example AST to compile
   dprintf("\n [ Build AST ] \n");

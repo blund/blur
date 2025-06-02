@@ -23,7 +23,7 @@ typedef struct {
 } ExecutableMemory;
 
 typedef struct {
-  char *key;
+  CallSignature key;
   Stencil *value;
 } StencilMap;
 
