@@ -81,7 +81,7 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
 
     case IR_IF: {
       IrIf *iff = &n->if_node;
-      CallSignature if_cs = {"if", {ARG_REG, ARG_IMM}};
+      CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
       Stencil *if_stencil = hmget(cc->stencils, if_cs);
       uint8_t *if_loc = copy_stencil(&cc->mem, if_stencil);
       hmput(l, n->label, if_loc);
@@ -102,7 +102,7 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       uint8_t *branch1_loc = hmget(l, iff->then_label);
       uint8_t *branch2_loc = hmget(l, iff->else_label);
 
-      CallSignature if_cs = {"if", {ARG_REG, ARG_IMM}};
+      CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
       Stencil *if_stencil = hmget(cc->stencils, if_cs);
       patch_hole_64(if_loc, if_stencil, 0, (uint64_t)branch1_loc);
       patch_hole_64(if_loc, if_stencil, 1, (uint64_t)branch2_loc);
