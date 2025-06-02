@@ -154,13 +154,12 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
   case call_expr: {
     int new_label;
     Call *call = &expr->call;
-    IrLiteral *args = transform_args(&call->args, cont_label, &new_label);
-    IrNode *n = emit_call(call->name, args, call->args.count, new_label);
+    IrLiteral *args = transform_args(call->args, cont_label, &new_label);
+    IrNode *n = emit_call(call->name, args, call->args->count, new_label);
     return n;
   }
 
-  default:
-    return emit_let(target_var, to_cps(new_identifier("lol")), cont_label);
+  default: break;
   }
 }
 
@@ -175,8 +174,8 @@ int transform_statement(Statement *stmt, int cont_label) {
   case call_statement: {
     int new_label;
     Call *call = &stmt->call;
-    IrLiteral *args = transform_args(&call->args, cont_label, &new_label);
-    IrNode *n = emit_call(call->name, args, call->args.count, new_label);
+    IrLiteral *args = transform_args(call->args, cont_label, &new_label);
+    IrNode *n = emit_call(call->name, args, call->args->count, new_label);
     return n->label;
   }
 

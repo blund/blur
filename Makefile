@@ -22,7 +22,7 @@ cut: gen
 # Generate stencils
 gen:
 	@mkdir -p generated
-	@$(cc) $(debug) -I. gen.c pond/*.c -o gen
+	@$(cc) $(debug) -I. gen.c codegen/print_c_code.c ast/build.c -o gen
 	@./gen
 
 # Cleanup scripts :)

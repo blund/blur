@@ -25,5 +25,6 @@ void traverse_block(Block *b, Visit v, TraverseCtx* ctx);
 void traverse_if(If *i, Visit v, TraverseCtx* ctx);
 void traverse_statement(Statement *s, Visit v, TraverseCtx* ctx);
 void traverse_block(Block *b, Visit v, TraverseCtx* ctx);
+void traverse_func_decl(FuncDecl *fd, Visit v, TraverseCtx *ctx);
 
 #endif

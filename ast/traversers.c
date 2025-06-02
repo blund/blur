@@ -29,7 +29,11 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     if (type == call_node) {
       *depth -= 1;
     }
+    if (type == var_node) {
+      *depth -= 1;
+    }
   }
+
 
   if (traversal == pre_order) {
   switch (type) {
@@ -76,6 +80,27 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     indent_(*depth);
     *depth += 1;
     dprintf("(If block)\n");
+  } break;
+
+  case func_decl_node: {
+    indent_(*depth);
+    *depth += 1;
+    FuncDecl *fd = node;
+    dprintf("(FuncDecl %s) \n", fd->name);
+
+  } break;
+
+  case type_node: {
+    indent_(*depth);
+    Type *t = node;
+    dprintf("(Type %s) \n", t->name);
+  } break;
+
+  case var_node: {
+    indent_(*depth);
+    *depth += 1;
+    Var *t = node;
+    dprintf("(Var %s) \n", t->name);
   } break;
 
   default: break;

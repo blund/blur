@@ -5,8 +5,7 @@
 #include <ast/ast.h>
 #include <ast/build.h>
 
-
-Block *new_block_multi(int count, ...) {
+Block *block_multi(int count, ...) {
   static int counter = 0;
   Block *b = malloc(sizeof(Block));
   b->node_type = block_node;
@@ -16,14 +15,59 @@ Block *new_block_multi(int count, ...) {
   va_list args;
   va_start(args, count);
   for (int i = 0; i < count; ++i) {
-    Statement *s = va_arg(args, Statement *);
+    Statement *s = va_arg(args, Statement*);
     arrput(b->statements, s); // stb_ds dynamic array
   }
   va_end(args);
   return b;
 }
 
-Statement *new_if(Expression* condition, Block *s1, Block* s2) {
+Parameters *params_multi(int count, ...) {
+  static int counter = 0;
+  Parameters *p = malloc(sizeof(Block));
+  p->node_type = params_node;
+  p->entries = NULL;
+  p->count = count;
+
+  va_list args;
+  va_start(args, count);
+  for (int i = 0; i < count; ++i) {
+    Var s = va_arg(args, Var);
+    arrput(p->entries, s); // stb_ds dynamic array
+  }
+  va_end(args);
+  return p;
+}
+
+Arguments *args_multi(int count, ...) {
+  static int counter = 0;
+  Arguments *p = malloc(sizeof(Block));
+  p->node_type = args_node;
+  p->entries = NULL;
+  p->count = count;
+
+  va_list args;
+  va_start(args, count);
+  for (int i = 0; i < count; ++i) {
+    Expression* s = va_arg(args, Expression*);
+    arrput(p->entries, s); // stb_ds dynamic array
+  }
+  va_end(args);
+  return p;
+}
+
+
+Type type(char *name) {
+  Type v = {.node_type = type_node, .name = name};
+  return v;
+}
+
+Var var(char *name, Type type) {
+  Var v = {.node_type = var_node, .name = name, .type = type};
+  return v;
+}
+
+Statement *if_test(Expression* condition, Block *s1, Block* s2) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
   s->kind = if_statement;
@@ -36,7 +80,19 @@ Statement *new_if(Expression* condition, Block *s1, Block* s2) {
   return s;
 }
 
-Statement *new_assign(char* name, Expression* e) {
+Statement *declare(char* name, Type type) {
+  Statement *s = malloc(sizeof(Statement));
+  s->node_type = statement_node;
+  s->kind = declare_statement;
+
+  Declare* d = &s->declare;
+  d->node_type = assign_node;
+  d->name = name;
+  d->type = type;
+  return s;
+}
+
+Statement *assign(char* name, Expression* e) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
   s->kind = assign_statement;
@@ -48,7 +104,7 @@ Statement *new_assign(char* name, Expression* e) {
   return s;
 }
 
-Statement *new_call(char* name, Arguments args) {
+Statement *call(char* name, Arguments *args) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
   s->kind = call_statement;
@@ -60,7 +116,7 @@ Statement *new_call(char* name, Arguments args) {
   return s;
 }
 
-Expression *new_call_expr(char* name, Arguments args) {
+Expression *call_e(char* name, Arguments *args) {
   Expression *e = malloc(sizeof(Expression));
   e->node_type = expression_node;
   e->kind = call_expr;
@@ -73,7 +129,7 @@ Expression *new_call_expr(char* name, Arguments args) {
 }
 
 
-Expression *new_identifier(char* name) {
+Expression *identifier(char* name) {
   Expression* e = malloc(sizeof(Expression));
   e->node_type = expression_node;
   e->kind = lit_expr;
@@ -85,7 +141,7 @@ Expression *new_identifier(char* name) {
   return e;
 }
 
-Expression *new_integer(int n) {
+Expression *integer(int n) {
   Expression* e = malloc(sizeof(Expression));
   e->node_type = expression_node;
   e->kind = lit_expr;
@@ -96,3 +152,15 @@ Expression *new_integer(int n) {
   l->integer = n;
   return e;
 }
+
+FuncDecl *func_decl(Type ret, char* name, Parameters *params, Block* body) {
+  FuncDecl *fd = malloc(sizeof(FuncDecl));
+  fd->node_type = func_decl_node;
+  fd->ret = ret;
+  fd->name = name;
+  fd->params = params;
+  fd->body = body;
+
+  return fd;
+}
+

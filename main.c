@@ -64,15 +64,12 @@ int main() {
 }
 
 Block* example_ast() {
-  return new_block(
-	     new_assign("test", new_integer(3)),
-             new_if(new_integer(1),
-                    new_block(new_call(
-                        "add", (Arguments){.count = 2,
-                                           .entries = {new_identifier("test"),
-                                                       new_integer(4)}})),
-                    new_block(new_call(
-                        "add", (Arguments){.count = 2,
-                                           .entries = {new_identifier("test"),
-                                                       new_integer(7)}}))));
+  return block(
+	       assign("test", integer(3)),
+	       if_test(integer(1),
+		       block(call(
+				  "add", args(identifier("test"), integer(4)))),
+		       block(call(
+				  "add", args(identifier("test"), integer(7))))
+		       ));
 }

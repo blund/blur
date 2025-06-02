@@ -21,11 +21,15 @@ void traverse_lit(Literal *l, Visit v, TraverseCtx *ctx) {
 }
 
 void traverse_expr(Expression *e, Visit v, TraverseCtx* ctx);
+
+void traverse_args(Arguments *a, Visit v, TraverseCtx* ctx) {
+  v(a->node_type, a, ctx, pre_order);
+  v(a->node_type, a, ctx,post_order);
+}
+
 void traverse_call(Call *c, Visit v, TraverseCtx* ctx) {
   v(c->node_type, c, ctx, pre_order);
-  fori(c->args.count) {
-    traverse_expr(c->args.entries[i], v, ctx);
-  }
+  traverse_args(c->args, v, ctx);
   v(c->node_type, c, ctx,post_order);
 }
 
@@ -44,6 +48,10 @@ void traverse_assign(Assign *a, Visit v, TraverseCtx* ctx) {
   v(a->node_type, a, ctx,post_order);
 }
 
+void traverse_declare(Declare *a, Visit v, TraverseCtx* ctx) {
+  v(a->node_type, a, ctx, pre_order);
+  v(a->node_type, a, ctx,post_order);
+}
 
 void traverse_block(Block *b, Visit v, TraverseCtx* ctx);
 
@@ -61,6 +69,7 @@ void traverse_statement(Statement *s, Visit v, TraverseCtx* ctx) {
   v(s->node_type, s, ctx, pre_order);
   switch (s->kind) {
   case assign_statement: traverse_assign(&s->assign, v, ctx); break;
+  case declare_statement: traverse_declare(&s->declare, v, ctx); break;
   case call_statement: traverse_call(&s->call, v, ctx); break;
   case if_statement: traverse_if(&s->if_block, v, ctx); break;
   }
@@ -82,5 +91,31 @@ void traverse_block(Block *b, Visit v, TraverseCtx *ctx) {
       traverse_statement(b->statements[i], v, ctx);
     }
   }
-  v(b->node_type, b, ctx,post_order);
+  v(b->node_type, b, ctx, post_order);
+}
+
+void traverse_type(Type *t, Visit v, TraverseCtx *ctx) {
+  v(t->node_type, t, ctx, pre_order);
+  v(t->node_type, t, ctx,post_order);
+}
+
+void traverse_var(Var *t, Visit v, TraverseCtx *ctx) {
+  v(t->node_type, t, ctx, pre_order);
+  traverse_type(&t->type, v, ctx);
+  v(t->node_type, t, ctx,post_order);
+}
+
+void traverse_params(Parameters *p, Visit v, TraverseCtx *ctx) {
+  v(p->node_type, p, ctx, pre_order);
+  fori(p->count)
+    traverse_var(&p->entries[i], v, ctx);
+  v(p->node_type, p, ctx, post_order);
+}
+
+void traverse_func_decl(FuncDecl *fd, Visit v, TraverseCtx *ctx) {
+  v(fd->node_type, fd, ctx, pre_order);
+  traverse_type(&fd->ret, v, ctx);
+  traverse_params(fd->params, v, ctx);
+  traverse_block(fd->body, v, ctx);
+  v(fd->node_type, fd, ctx,post_order);
 }

@@ -1,17 +1,18 @@
 
+#define STB_DS_IMPLEMENTATION
+#include <include/stb_ds.h>
+
 #define BL_STRINGBUILDER_IMPL
 #define BL_IMPL
-#include "bl.h"
+#include <bl.h>
 
-#include "pond/ast.h"
-#include "pond/build.h"
-#include "pond/print.h"
+#include <codegen/print_c_code.h>
 
-#include "stencil.h"
+#include <ast/build.h>
+#include <stencil.h>
 
-FuncDecl *build_add_const_ast();
-FuncDecl *build_if_test_ast();
-FuncDecl *build_stack_write_ast();
+FuncDecl *build_add_ast();
+FuncDecl *build_if_ast();
 
 StringBuilder* sb;
 
@@ -22,7 +23,7 @@ typedef struct {
   StringBuilder* code;
 } PreStencil;
 
-#define num_stencils 3
+#define num_stencils 2
 
 PreStencil add_const_pre = {
     .name = "add_const",
@@ -35,12 +36,6 @@ PreStencil if_test_pre = {
     .num_64_holes = 2,
 };
 
-PreStencil stack_write_pre = {
-    .name = "stack_write",
-    .num_32_holes = 2,
-    .num_64_holes = 1,
-};
-
 
 PreStencil pres[num_stencils];
 
@@ -48,31 +43,18 @@ PreStencil pres[num_stencils];
 int main() {
   dprintf(" [ Generating Stencils ]\n");
 
-  FuncDecl *if_test_ast = build_if_test_ast();
-  FuncDecl *add_const_ast = build_add_const_ast();
-  FuncDecl *stack_write_ast = build_stack_write_ast();
+  FuncDecl *if_ast = build_if_ast();
+  FuncDecl *add_ast = build_add_ast();
 
-  Parser p = {0};
-
-  // Construct add_const code
   add_const_pre.code = new_builder(1024);
-  p.output = add_const_pre.code;
-  print_func_decl(&p, add_const_ast);
+  print_func_decl(add_const_pre.code, add_ast);
+  //print_func_decl(&p, add_const_ast);
 
-  // Construct if_pre_code
   if_test_pre.code = new_builder(1024);
-  p.output = if_test_pre.code;
-  print_func_decl(&p, if_test_ast);
-
-  // Construct if_pre_code
-  stack_write_pre.code = new_builder(1024);
-  p.output = stack_write_pre.code;
-  print_func_decl(&p, stack_write_ast);
-
+  print_func_decl(if_test_pre.code, if_ast);
 
   pres[0] = add_const_pre;
   pres[1] = if_test_pre;
-  pres[2] = stack_write_pre;
 
   StringBuilder* sb = new_builder(1024);
 
@@ -117,65 +99,35 @@ int main() {
   fwrite(to_string(sb), 1, sb->index, f);
 }
 
-FuncDecl *build_if_test_ast() {
-  FuncDecl *if_test = new_func_decl("void", "if_test",
-				    (Parameters){.count = 3,
-						 .entries = {
-						   new_parameter("uintptr_t", "stack"),
-						   new_parameter("int", "condition"),
-						   new_parameter("int", "x"),
-						 }
-				    });
-  IfBlock *if_block = new_if_block(if_test->body, "condition");
-  new_pointer_call(if_block->if_block, "void", STR(big_hole_1),
-		   (Parameters){.count = 2,
-				.entries = {
-				  new_parameter("uintptr_t", "stack"),
-				  new_parameter("int", "x"),
-				}});
-  new_pointer_call(if_block->else_block, "void", STR(big_hole_2),
-		   (Parameters){
-		     .count = 2,
-		     new_parameter("uintptr_t", "stack"),
-		     new_parameter("int", "x"),
-		   });
-
-  return if_test;
-};
-
-FuncDecl *build_add_const_ast() {
-  FuncDecl *add_const =
-    new_func_decl("void", "add_const",
-		  (Parameters){.count = 2,
-			       .entries = {
-				 new_parameter("uintptr_t", "stack"),
-				 new_parameter("int", "lhs"),
-			       }});
-  Assign *a = new_assign(add_const->body, "int", "result");
-  new_binop(a->expr, "lhs", "+", STR(small_hole_1));
-  new_pointer_call(next_block(add_const->body), "void", STR(big_hole_1),
-		   (Parameters){
-		     .count = 2,
-		     new_parameter("uintptr_t", "stack"),
-		     new_parameter("int", "result"),
-		   });
-  return add_const;
+#define i identifier
+FuncDecl *build_if_ast() {
+  return func_decl(type("void"),
+		   "if_test",
+		   params(var("stack", type("uintptr_t")),
+			  var("condition", type("int")),
+			  var("x", type("int"))),
+		   block(if_test(i("condition"),
+				 block(call("pointer_call",
+					    args( i("void"), i(STR(big_hole_1)),
+						  i("uintptr_t"), i("stack"),
+						  i("int"), i("x")))),
+				 block(call("pointer_call",
+					    args( i("void"), i(STR(big_hole_2)),
+						  i("uintptr_t"), i("stack"),
+						  i("int"), i("x")))))));
 }
 
-FuncDecl *build_stack_write_ast() {
-  FuncDecl *stack_write =
-    new_func_decl("void", "stack_write",
-		  (Parameters){.count = 1,
-			       .entries = {
-				 new_parameter("uintptr_t", "stack"),
-			       }});
-  new_array_write(stack_write->body, "stack", STR(small_hole_1),
-                  STR(small_hole_2));
-  new_pointer_call(next_block(stack_write->body), "void", STR(big_hole_1),
-		   (Parameters){
-		     .count = 1,
-		     new_parameter("uintptr_t", "stack"),
-		   });
-
-  return stack_write;
+FuncDecl *build_add_ast() {
+  return func_decl(type("void"),
+		   "add_const",
+		   params(var("stack", type("uintptr_t")),
+			  var("lhs", type("int"))),
+		   block(
+			 declare("result", type("int")),
+			 assign("result", 
+				call_e("add", args(i("lhs"), i(STR(small_hole_1))))),
+			 call("pointer_call",
+			      args( i("void"), i(STR(big_hole_1)),
+				    i("uintptr_t"), i("stack"),
+				    i("int"), i("result")))));
 }
