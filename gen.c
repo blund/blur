@@ -46,7 +46,7 @@ PreStencil pres[num_stencils];
 
 
 int main() {
-  dprintf(" Running stencil code generation...\n");
+  dprintf(" [ Generating Stencils ]\n");
 
   FuncDecl *if_test_ast = build_if_test_ast();
   FuncDecl *add_const_ast = build_add_const_ast();

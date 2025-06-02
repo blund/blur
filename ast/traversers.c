@@ -108,6 +108,9 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     if (type == if_node) {
       *depth -= 1;
     }
+    if (type == call_node) {
+      *depth -= 1;
+    }
   }
 
   if (traversal == pre_order) {
@@ -118,13 +121,12 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
 
     switch(lit->kind) {
     case identifier_lit:
-      printf("(Literal ident %s)\n", lit->identifier);
+      printf("(Literal var '%s')\n", lit->identifier);
       break;
 
     case integer_lit:
       printf("(Literal int %d)\n", lit->integer);
       break;
-
 
     default: break;
     }
@@ -134,13 +136,14 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     indent_(*depth);
     *depth += 1;
     Assign *a = node;
-    printf("(Assign)\n");
+    printf("(Assign '%s')\n", a->name);
   } break;
 
   case call_node: {
     indent_(*depth);
-    printf("Call\n");
+    *depth += 1;
     Call *c = node;
+    printf("(Call %s)\n", c->name);
   } break;
 
   case statement_node: {
@@ -150,13 +153,7 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     indent_(*depth);
     *depth += 1;
     Block *b = node;
-    printf("(Block %p ", b);
-    if (b->count == 0) break;
-    printf(" [used vars :");
-    for (int i = 0; i < hmlen(b->used_vars); ++i) {
-      printf(" %s,", b->used_vars[i].key);
-    }
-    printf("])\n");
+    printf("(Block)\n");
 	   
   } break;
 

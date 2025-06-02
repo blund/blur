@@ -29,26 +29,29 @@ void print_result(uintptr_t stack, int result) {
 }
 
 int main() {
-  dprintf(" Running copy-patch compiler...\n");
   CompileContext cc;
   cc.mem = make_executable_memory();
   cc.add_stencil         = read_stencil("generated/stencils/add_const.bin");
   cc.if_stencil          = read_stencil("generated/stencils/if_test.bin");
   cc.stack_write_stencil = read_stencil("generated/stencils/stack_write.bin");
   cc.print_result        = &print_result;
-  cc.loc_stack = NULL;
 
   // Build example AST to compile
+  dprintf("\n [ Build AST ] \n");
   Block *b = example_ast();
+  traverse_block(b, print_ast, &(TraverseCtx){.traversal=pre_order, .data=0});
 
   // Construct continuation passing style graph of our ast
+  dprintf("\n [ Construct CPS graph ] \n");
   CpsNode *n = transform_ast(b);
   print_cps_graph(n);
 
   // Do the magic
+  dprintf("\n [ Compile ]\n");
   copy_and_patch(n, &cc);
 
   // Execute the compiled code
+  dprintf(" [ Run ]\n");
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
   void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))cc.mem.code;

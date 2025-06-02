@@ -22,7 +22,7 @@ uint64_t big_holes[4] = {
 };
 
 int main() {
-  dprintf(" Running stencil cutting...\n");
+  dprintf("\n [ Cutting Stencils ]\n");
   build_stencils();
 
   fori(num_stencils) {
