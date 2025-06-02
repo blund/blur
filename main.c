@@ -31,10 +31,11 @@ void print_result(uintptr_t stack, int result) {
 int main() {
   CompileContext cc;
   cc.mem = make_executable_memory();
-  cc.add_stencil         = read_stencil("generated/stencils/add_const.bin");
-  cc.if_stencil          = read_stencil("generated/stencils/if_test.bin");
-  cc.stack_write_stencil = read_stencil("generated/stencils/stack_write.bin");
-  cc.print_result        = &print_result;
+  cc.print_result = &print_result;
+  cc.stencils = NULL;
+
+  hmput(cc.stencils, "add", read_stencil("generated/stencils/add_const.bin"));
+  hmput(cc.stencils, "if",  read_stencil("generated/stencils/if_test.bin"));
 
   // Build example AST to compile
   dprintf("\n [ Build AST ] \n");

@@ -68,10 +68,11 @@ void copy_and_patch(CpsNode *head, CompileContext* cc) {
     case CPS_CALL: {
       CpsCall *c = &n->call_node;
       // @TODO - select stencil from args
-      uint8_t *add_loc = copy_stencil(&cc->mem, &cc->add_stencil);
+      Stencil *add_stencil = hmget(cc->stencils, "add");
+      uint8_t *add_loc = copy_stencil(&cc->mem, add_stencil);
 
-      patch_hole_32(add_loc, &cc->add_stencil, 0, c->args[1].integer);
-      patch_hole_64(add_loc, &cc->add_stencil, 0, (uint64_t)cc->print_result);
+      patch_hole_32(add_loc, add_stencil, 0, c->args[1].integer);
+      patch_hole_64(add_loc, add_stencil, 0, (uint64_t)cc->print_result);
 
       hmput(l, n->label, add_loc);
       break;
@@ -79,7 +80,8 @@ void copy_and_patch(CpsNode *head, CompileContext* cc) {
 
     case CPS_IF: {
       CpsIf *iff = &n->if_node;
-      uint8_t *if_loc = copy_stencil(&cc->mem, &cc->if_stencil);
+      Stencil *if_stencil = hmget(cc->stencils, "if");
+      uint8_t *if_loc = copy_stencil(&cc->mem, if_stencil);
       hmput(l, n->label, if_loc);
       break;
     }
@@ -98,8 +100,9 @@ void copy_and_patch(CpsNode *head, CompileContext* cc) {
       uint8_t *branch1_loc = hmget(l, iff->then_label);
       uint8_t *branch2_loc = hmget(l, iff->else_label);
 
-      patch_hole_64(if_loc, &cc->if_stencil, 0, (uint64_t)branch1_loc);
-      patch_hole_64(if_loc, &cc->if_stencil, 1, (uint64_t)branch2_loc);
+      Stencil *if_stencil = hmget(cc->stencils, "if");
+      patch_hole_64(if_loc, if_stencil, 0, (uint64_t)branch1_loc);
+      patch_hole_64(if_loc, if_stencil, 1, (uint64_t)branch2_loc);
     } break;
 
     default: break;

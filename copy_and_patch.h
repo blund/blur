@@ -5,6 +5,17 @@
 #include "ast/traverse.h"
 #include "cps/cps.h"
 
+typedef enum {
+    ARG_IMM,
+    ARG_REG,
+    ARG_STACK
+} ArgClass;
+
+typedef struct {
+    const char *op;     // e.g., "add"
+    ArgClass args[2];   // assume binary ops
+} CallSignature;
+
 typedef struct {
   uint8_t *code;
   int write_head;
@@ -12,11 +23,14 @@ typedef struct {
 } ExecutableMemory;
 
 typedef struct {
+  char *key;
+  Stencil *value;
+} StencilMap;
+
+typedef struct {
   ExecutableMemory mem;
-  Stencil add_stencil;
-  Stencil if_stencil;
-  Stencil stack_write_stencil;
   void (*print_result)(uintptr_t stack, int result); // For debugging;
+  StencilMap *stencils;
 } CompileContext;
 
 void patch_hole_64(uint8_t *code, Stencil *s, int index, uint64_t value);
