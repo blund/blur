@@ -64,12 +64,8 @@ int main() {
 }
 
 Block* example_ast() {
-  return block(
-	       assign("test", integer(3)),
-	       if_test(integer(1),
-		       block(call(
-				  "add", args(identifier("test"), integer(4)))),
-		       block(call(
-				  "add", args(identifier("test"), integer(7))))
-		       ));
+  return block(assign("test", integer(3)),
+               if_test(integer(1),
+                       block(call("add", args(identifier("test"), integer(4)))),
+                       block(call("add", args(identifier("test"), integer(7))))));
 }
