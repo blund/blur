@@ -1,11 +1,11 @@
 
 #include "stdio.h"
 
-#include "../include/stb_ds.h"
-#include "../bl.h"
+#include <include/stb_ds.h>
+#include <bl.h>
 
-#include "ast.h"
-#include "traverse.h"
+#include <ast/ast.h>
+#include <ast/traverse.h>
 
 void indent_(int depth) {
   for (int i = 0; i < depth; ++i) {

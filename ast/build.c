@@ -1,9 +1,10 @@
-#include "../include/stb_ds.h"
-
-#include "ast.h"
-#include "build.h"
-
 #include <stdarg.h>
+
+#include <include/stb_ds.h>
+
+#include <ast/ast.h>
+#include <ast/build.h>
+
 
 Block *new_block_multi(int count, ...) {
   static int counter = 0;

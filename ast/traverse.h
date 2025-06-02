@@ -1,7 +1,7 @@
 #ifndef BLUR_AST_TRAVERSE_H
 #define BLUR_AST_TRAVERSE_H
 
-#include "ast.h"
+#include <ast/ast.h>
 
 typedef enum {
   pre_order,

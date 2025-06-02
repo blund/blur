@@ -3,23 +3,23 @@
 
 #define BL_STRINGBUILDER_IMPL
 #define BL_IMPL
-#include "bl.h"
+#include <bl.h>
 
 #define STB_DS_ASSERT assert
 #define STB_DS_IMPLEMENTATION
-#include "include/stb_ds.h"
+#include <include/stb_ds.h>
 
-#include "ast/ast.h"
-#include "ast/build.h"
-#include "ast/traverse.h"
-#include "ast/traversers.h"
+#include <ast/ast.h>
+#include <ast/build.h>
+#include <ast/traverse.h>
+#include <ast/traversers.h>
 
-#include "ir/ir.h"
-#include "ir/print.h"
-#include "ir/transform.h"
+#include <ir/ir.h>
+#include <ir/print.h>
+#include <ir/transform.h>
 
-#include "copy_and_patch.h"
-#include "stencil.h"
+#include <copy_and_patch.h>
+#include <stencil.h>
 
 Block *example_ast();
 
@@ -46,7 +46,7 @@ int main() {
 
   // Construct continuation passing style graph of our ast
   dprintf("\n [ Construct CPS graph ] \n");
-  CpsNode *n = transform_ast(b);
+  IrNode *n = transform_ast(b);
   print_cps_graph(n);
 
   // Do the magic

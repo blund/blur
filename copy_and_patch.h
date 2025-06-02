@@ -1,9 +1,11 @@
 #ifndef BLUR_COPY_AND_PATCH_H
 #define BLUR_COPY_AND_PATCH_H
 
-#include "stencil.h"
-#include "ast/traverse.h"
-#include "ir/ir.h"
+#include <ast/traverse.h>
+#include <ir/ir.h>
+
+#include <stencil.h>
+
 
 typedef enum {
     ARG_IMM,
@@ -37,5 +39,5 @@ void patch_hole_64(uint8_t *code, Stencil *s, int index, uint64_t value);
 void patch_hole_32(uint8_t* code, Stencil* s, int index, uint32_t value);
 uint8_t *copy_stencil(ExecutableMemory *em, Stencil *s);
 ExecutableMemory make_executable_memory();
-void copy_and_patch(CpsNode *head, CompileContext* cc);
+void copy_and_patch(IrNode *head, CompileContext* cc);
 #endif

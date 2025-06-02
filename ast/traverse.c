@@ -1,7 +1,8 @@
-#include "traverse.h"
+#include <ast/traverse.h>
 
-#include "../include/stb_ds.h"
-#include "../bl.h"
+#include <include/stb_ds.h>
+#include <bl.h>
+
 void merge_sets(UsedVarSet **dst, UsedVarSet *src) {
   for (int i = 0; i < hmlen(src); ++i) {
     hmput(*dst, src[i].key, 1);

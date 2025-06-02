@@ -1,7 +1,8 @@
 #ifndef BLUR_AST_PRINT_H
 #define BLUR_AST_PRINT_H
 
-#include "ast.h"
+#include <ast/ast.h>
+
 void indent();
 void print_lit(Literal *l);
 void print_expr(Expression *e);

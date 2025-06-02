@@ -2,7 +2,6 @@
 
 # This should work with most C compilers, test at your own pleasure :)
 cc=zig cc
-# cc=tcc
 # cc=gcc -fno-toplevel-reorder
 # cc=clang
 
@@ -17,13 +16,13 @@ run: cut
 # Cut out stencils
 cut: gen
 	@mkdir -p generated/stencils
-	@$(cc) $(debug) -O2 cut.c -o cut 
+	@$(cc) $(debug) -O2 -I. cut.c -o cut
 	@./cut
 
 # Generate stencils
 gen:
 	@mkdir -p generated
-	@$(cc) $(debug) gen.c pond/*.c -o gen
+	@$(cc) $(debug) -I. gen.c pond/*.c -o gen
 	@./gen
 
 # Cleanup scripts :)

@@ -1,10 +1,9 @@
+#include <malloc.h>
+#include <string.h>
 
-#include "malloc.h"
-#include "string.h"
+#include <bl.h>
 
-#include "bl.h"
-
-#include "stencil.h"
+#include <stencil.h>
 
 uint32_t blur_tag = 0x72756C62;
 uint32_t code_tag = 0x636f6465;

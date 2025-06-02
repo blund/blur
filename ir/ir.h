@@ -1,73 +1,73 @@
 #ifndef BLUR_CPS_H
 #define BLUR_CPS_H
 
-#include "../ast/ast.h"
+#include <ast/ast.h>
 
 typedef enum {
-  CPS_LITERAL,
-  CPS_LET,
-  CPS_IF,
-  CPS_CALL,
-  CPS_RETURN,
-} CpsKind;
+  IR_LITERAL,
+  IR_LET,
+  IR_IF,
+  IR_CALL,
+  IR_RETURN,
+} IrKind;
 
-typedef struct CpsNode CpsNode;
+typedef struct IrNode IrNode;
 
 typedef struct {
   const char *name;
   int index;
-} CpsVar;
+} IrVar;
 
 typedef enum {
-  CPS_LITERAL_INTEGER,
-  CPS_LITERAL_VAR,
-} CpsLiteralKind;
+  IR_LITERAL_INTEGER,
+  IR_LITERAL_VAR,
+} IrLiteralKind;
 
 typedef struct {
-  CpsLiteralKind kind;
+  IrLiteralKind kind;
   union {
-    CpsVar var;
+    IrVar var;
     int integer;
   };
-} CpsLiteral;
+} IrLiteral;
 
 
 typedef struct {
-  CpsVar var;
-  CpsLiteral value;
+  IrVar var;
+  IrLiteral value;
   int cont;
-} CpsLet;
+} IrLet;
 
 typedef struct {
-  CpsVar cond;
+  IrVar cond;
   int then_label;
   int else_label;
-} CpsIf;
+} IrIf;
 
 typedef struct {
   const char *value;
-} CpsReturn;
+} IrReturn;
 
 typedef struct {
   char *func;
-  CpsLiteral* args;
+  IrLiteral* args;
   int arg_count;
   // int result_index;
   int cont;
-} CpsCall;
+} IrCall;
 
-struct CpsNode {
+struct IrNode {
   int label;
-  CpsKind kind;
+  IrKind kind;
   union {
-    CpsLet let_node;
-    CpsCall call_node;
-    CpsIf if_node;
-    Literal literal;
-    CpsReturn return_node;
+    IrLet let_node;
+    IrCall call_node;
+    IrIf if_node;
+    IrLiteral literal;
+    IrReturn return_node;
   };
 
-  CpsNode *next;
+  IrNode *next;
 };
 
 #endif

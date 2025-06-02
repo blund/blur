@@ -1,11 +1,11 @@
 
-#include "generated/stencils.h"
+#include <generated/stencils.h>
 
 #define BL_IMPL
 #define BL_STRINGBUILDER_IMPL
-#include "bl.h"
+#include <bl.h>
 
-#include "stencil.h"
+#include <stencil.h>
 
 uint32_t small_holes[4] = {
     small_hole_1,
