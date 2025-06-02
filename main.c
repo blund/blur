@@ -14,9 +14,9 @@
 #include "ast/traverse.h"
 #include "ast/traversers.h"
 
-#include "cps/cps.h"
-#include "cps/print.h"
-#include "cps/transform.h"
+#include "ir/ir.h"
+#include "ir/print.h"
+#include "ir/transform.h"
 
 #include "copy_and_patch.h"
 #include "stencil.h"

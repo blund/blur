@@ -7,7 +7,7 @@
 #include "bl.h"
 
 #include "copy_and_patch.h"
-#include "cps/cps.h"
+#include "ir/ir.h"
 
 void patch_hole_32(uint8_t* code, Stencil* s, int index, uint32_t value) {
   int code_index = s->holes_32[index];

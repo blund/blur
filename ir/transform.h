@@ -1,10 +1,10 @@
 #ifndef BLUR_CPS_TRANSFORM_H
 #define BLUR_CPS_TRANSFORM_H
 
-#include "../ast/ast.h"
-#include "../ast/build.h"
+#include "ast/ast.h"
+#include "ast/build.h"
 
-#include "cps.h"
+#include "ir.h"
 
 typedef struct {
   const char* key;

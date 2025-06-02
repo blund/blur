@@ -4,7 +4,7 @@
 #include "../ast/ast.h"
 #include "../ast/build.h"
 
-#include "cps.h"
+#include "ir.h"
 
 
 void print_literal(CpsLiteral *lit);

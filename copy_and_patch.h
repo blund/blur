@@ -3,7 +3,7 @@
 
 #include "stencil.h"
 #include "ast/traverse.h"
-#include "cps/cps.h"
+#include "ir/ir.h"
 
 typedef enum {
     ARG_IMM,
