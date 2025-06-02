@@ -1,6 +1,10 @@
 #include "stdio.h"
 
+#include "../include/stb_ds.h"
+#include "../bl.h"
+
 #include "print.h"
+
 
 void print_literal(CpsLiteral *lit) {
   if (!lit) {
@@ -63,3 +67,4 @@ void print_cps_graph(CpsNode *head) {
     }
   }
 }
+

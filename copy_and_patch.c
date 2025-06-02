@@ -7,7 +7,7 @@
 #include "bl.h"
 
 #include "copy_and_patch.h"
-#include "ast/traverse.h"
+#include "cps/cps.h"
 
 void patch_hole_32(uint8_t* code, Stencil* s, int index, uint32_t value) {
   int code_index = s->holes_32[index];
@@ -42,47 +42,79 @@ uint8_t* copy_stencil(ExecutableMemory *em, Stencil *s) {
   return location;
 }
 
-void copy_and_patch(NodeType type, void *node, TraverseCtx *ctx, TraversalType traversal) {
-  CompileContext *cc = ctx->data;
+CpsNode *_get_node(CpsNode* node, int count, int index) {
+  if (index == count)
+    return node;
+  return _get_node(node->next, count, index+1);
+}
 
-  static UsedVarSet* set;
+CpsNode *get_node(CpsNode *head, int n) { return _get_node(head, n, 0); }
 
-  if (traversal == pre_order) {
-    switch (type) {
+typedef struct {
+  int key;
+  uint8_t* value;  // can be anything; `true` is good enough
+} CodeLocation;
 
-    case block_node: {
-      Block* b = node;
-      set = b->used_vars;
-    } break;
+void copy_and_patch(CpsNode *head, CompileContext* cc) {
+  CodeLocation *l = NULL;
 
-    case call_node: {
-      Call *c = node;
-      uint8_t *add_loc = copy_stencil(&cc->mem, &cc->add_stencil);
-
-      patch_hole_32(add_loc, &cc->add_stencil, 0, c->args.entries[1]->lit.integer);
-      patch_hole_64(add_loc, &cc->add_stencil, 0, (uint64_t)cc->print_result);
-
-      arrput(cc->loc_stack, add_loc);
-    } break;
-
-    case if_node: {
-      uint8_t *if_loc = copy_stencil(&cc->mem, &cc->if_stencil);
-      arrput(cc->loc_stack, if_loc);
-    } break;
-
-    default:
+  // First pass, copy machine code, patch primitives
+  for (CpsNode *n = head; n != NULL; n = n->next) {
+    switch (n->kind) {
+    case CPS_LET: {
       break;
     }
-  }
 
-  if (traversal == post_order) {
-    if (type == if_node) {
-      uint8_t* add1_loc = arrpop(cc->loc_stack);
-      uint8_t* add2_loc = arrpop(cc->loc_stack);
-      uint8_t *if_loc = arrpop(cc->loc_stack);
-      patch_hole_64(if_loc, &cc->if_stencil, 0, (uint64_t)add1_loc);
-      patch_hole_64(if_loc, &cc->if_stencil, 1, (uint64_t)add2_loc);
+    case CPS_CALL: {
+      CpsCall *c = &n->call_node;
+      // @TODO - select stencil from args
+      uint8_t *add_loc = copy_stencil(&cc->mem, &cc->add_stencil);
 
+      patch_hole_32(add_loc, &cc->add_stencil, 0, c->args[1].integer);
+      patch_hole_64(add_loc, &cc->add_stencil, 0, (uint64_t)cc->print_result);
+
+      hmput(l, n->label, add_loc);
+      break;
+    }
+
+    case CPS_IF: {
+      CpsIf *iff = &n->if_node;
+      uint8_t *if_loc = copy_stencil(&cc->mem, &cc->if_stencil);
+      hmput(l, n->label, if_loc);
+      break;
+    }
+
+    case CPS_RETURN: {
+      break;
+    }
+
+    default:
+      printf("unknown node type\n");
     }
   }
+
+  // Second pass, patch dependent holes
+  for (CpsNode *n = head; n != NULL; n = n->next) {
+    switch (n->kind) {
+    case CPS_IF: {
+      CpsIf *iff = &n->if_node;
+      uint8_t *if_loc = hmget(l, n->label);
+
+      uint8_t *branch1_loc = hmget(l, iff->then_label);
+      uint8_t *branch2_loc = hmget(l, iff->else_label);
+
+      patch_hole_64(if_loc, &cc->if_stencil, 0, (uint64_t)branch1_loc);
+      patch_hole_64(if_loc, &cc->if_stencil, 1, (uint64_t)branch2_loc);
+
+      printf("if %s then L%d else L%d\n",
+	     iff->cond.name,
+	     iff->then_label,
+	     iff->else_label);
+      break;
+    }
+
+    default: break;
+    }
+  }
+
 }

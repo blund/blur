@@ -9,5 +9,6 @@
 
 void print_literal(CpsLiteral *lit);
 void print_cps_graph(CpsNode *head);
+void compile(CpsNode *head);
 
 #endif

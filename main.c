@@ -45,30 +45,12 @@ int main() {
   CpsNode *n = transform_ast(b);
   print_cps_graph(n);
 
-  // Traverse block to gather aliveness
-  TraverseCtx ctx;
+  // Do the magic
+  copy_and_patch(n, &cc);
 
-  UsedVarSet **set_stack = NULL;
-  UsedVarSet *initial_set = NULL;
-  arrput(set_stack, initial_set);
-
-  // Find all used vars in blocks
-  ctx = (TraverseCtx){.traversal=post_order, .data = &set_stack};
-  traverse_block(b, collect_used_vars, &ctx);
-
-  // Print AST
-  dprintf("Printing ast...\n");
-  ctx = (TraverseCtx){.traversal= pre_order, .data = 0};
-  traverse_block(b, print_ast, &ctx);
-
-  // Build executable
-  ctx = (TraverseCtx){.traversal= pre_order, .data = &cc};
-  traverse_block(b, copy_and_patch, &ctx);
-
+  // Execute the compiled code
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
-
-  // Call the compiled code
   void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))cc.mem.code;
   func(stack, 0, 2);
   
