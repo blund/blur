@@ -1,5 +1,5 @@
-#ifndef BLUR_CPS_H
-#define BLUR_CPS_H
+#ifndef BLUR_IR_H
+#define BLUR_IR_H
 
 #include <ast/ast.h>
 

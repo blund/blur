@@ -52,7 +52,7 @@ IrVar from_name(const char *name) {
   return v;
 }
 
-void add_cps_node(IrNode *node) {
+void add_ir_node(IrNode *node) {
   node->next = graph_head;
   graph_head = node;
 }
@@ -61,7 +61,7 @@ IrNode* new_node(IrKind kind) {
   IrNode* n =  malloc(sizeof(IrNode));
   n->label = new_label();
   n->kind = kind;
-  add_cps_node(n);
+  add_ir_node(n);
   return n;
 }
 
@@ -101,7 +101,7 @@ int transform_block(Block *block, int cont_label) {
   return cont_label;
 }
 
-IrLiteral to_cps(Expression *e) {
+IrLiteral to_ir(Expression *e) {
   IrLiteral cl;
 
   if (e->lit.kind == integer_lit) {
@@ -148,7 +148,7 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
   switch (expr->kind) {
   case lit_expr: {
     Literal *lit = &expr->lit;
-    return emit_let(target_var,to_cps(expr), cont_label);
+    return emit_let(target_var, to_ir(expr), cont_label);
   }
 
   case call_expr: {
@@ -167,7 +167,7 @@ int transform_statement(Statement *stmt, int cont_label) {
   switch (stmt->kind) {
   case assign_statement: {
     Expression *e = stmt->assign.expr;
-    IrNode *n = emit_let(from_name(stmt->assign.name), to_cps(e), cont_label);
+    IrNode *n = emit_let(from_name(stmt->assign.name), to_ir(e), cont_label);
     return n->label;
   }
 

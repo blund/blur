@@ -46,9 +46,9 @@ int main() {
   traverse_block(b, print_ast, &(TraverseCtx){.traversal=pre_order, .data=0});
 
   // Construct continuation passing style graph of our ast
-  dprintf("\n -- Constructng CPS graph \n");
+  dprintf("\n -- Constructng IR \n");
   IrNode *n = transform_ast(b);
-  print_cps_graph(n);
+  print_ir(n);
 
   // Do the magic
   dprintf("\n -- Compiling\n");

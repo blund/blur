@@ -25,7 +25,7 @@ void print_literal(IrLiteral *lit) {
 }
 
 
-void print_cps_graph(IrNode *head) {
+void print_ir(IrNode *head) {
   for (IrNode *n = head; n != NULL; n = n->next) {
     dprintf("L%d: ", n->label);
 

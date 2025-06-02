@@ -1,5 +1,5 @@
-#ifndef BLUR_CPS_TRANSFORM_H
-#define BLUR_CPS_TRANSFORM_H
+#ifndef BLUR_IR_TRANSFORM_H
+#define BLUR_IR_TRANSFORM_H
 
 #include <ast/ast.h>
 #include <ast/build.h>
