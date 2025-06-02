@@ -24,6 +24,8 @@ void traverse_expr(Expression *e, Visit v, TraverseCtx* ctx);
 
 void traverse_args(Arguments *a, Visit v, TraverseCtx* ctx) {
   v(a->node_type, a, ctx, pre_order);
+  fori(a->count)
+    traverse_expr(a->entries[i], v, ctx);
   v(a->node_type, a, ctx,post_order);
 }
 
