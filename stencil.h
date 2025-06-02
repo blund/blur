@@ -27,8 +27,8 @@ typedef struct {
   uint32_t num_holes_64;
 
   // The indices into the code of the hole
-  int holes_32[4];
-  int holes_64[4];
+  int *holes_32;
+  int *holes_64;
 } Stencil;
 
 Stencil* read_stencil(char *file_path);

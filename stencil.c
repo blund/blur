@@ -26,14 +26,22 @@ Stencil* read_stencil(char *file_path) {
   stencil->code_size = header[1];
   stencil->num_holes_32 = header[2];
   stencil->num_holes_64 = header[3];
-  memcpy(&stencil->holes_32, &header[4], sizeof(uint32_t)*max_stencil_holes);
-  memcpy(&stencil->holes_64, &header[4 + max_stencil_holes], sizeof(uint32_t) * max_stencil_holes);
+
+  stencil->holes_32 = malloc(sizeof(int)*stencil->num_holes_32);
+  stencil->holes_64 = malloc(sizeof(int)*stencil->num_holes_64);
+
+  if (stencil->num_holes_32)
+    memcpy(stencil->holes_32, &header[4], sizeof(uint32_t)*stencil->num_holes_32);
+  if (stencil->num_holes_64)
+    memcpy(stencil->holes_64, &header[4 + stencil->num_holes_32], sizeof(uint32_t)*stencil->num_holes_64);
 
   dprintf("    -- Code Size: %d\n", stencil->code_size);
 
   dprintf("    -- 32-bit holes: %d\n", stencil->num_holes_32);
-  fori(stencil->num_holes_32)
-    dprintf("      -- 32-bit stencil hole %d at index %d\n", i, stencil->holes_32[i]);
+  fori(stencil->num_holes_32) {
+    dprintf("      -- 32-bit stencil hole %d at index %d\n", i,
+            stencil->holes_32[i]);
+  }
 
   dprintf("    -- 64-bit holes: %d\n", stencil->num_holes_64);
   fori(stencil->num_holes_64)

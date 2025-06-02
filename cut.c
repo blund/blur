@@ -31,6 +31,9 @@ int main() {
 	   s->num_holes_32,
 	   s->num_holes_64);
 
+    s->holes_32 = malloc(sizeof(int)*s->num_holes_32);
+    s->holes_64 = malloc(sizeof(int)*s->num_holes_64);
+
     uint8_t *func_ptr = (uint8_t *)s->code;
 
     dprintf("    -- Code size: %d\n", s->code_size);
@@ -80,8 +83,8 @@ int main() {
     fwrite(&s->code_size, sizeof(uint32_t), 1, f);
     fwrite(&s->num_holes_32, sizeof(uint32_t), 1, f);
     fwrite(&s->num_holes_64, sizeof(uint32_t), 1, f);
-    fwrite(&s->holes_32, sizeof(int), 4, f);
-    fwrite(&s->holes_64, sizeof(int), 4, f);
+    fwrite(s->holes_32, sizeof(int), s->num_holes_32, f);
+    fwrite(s->holes_64, sizeof(int), s->num_holes_64, f);
     fwrite(&code_tag, sizeof(uint32_t), 1, f);
     fwrite(func_ptr, 1, s->code_size, f);
     fwrite(&end_tag, sizeof(uint32_t), 1, f);
