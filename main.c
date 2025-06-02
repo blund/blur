@@ -29,6 +29,7 @@ void print_result(uintptr_t stack, int result) {
 }
 
 int main() {
+  dprintf("\n [ Running Compiler ]\n");
   CompileContext cc;
   cc.mem = make_executable_memory();
   cc.print_result = &print_result;
@@ -40,21 +41,21 @@ int main() {
   hmput(cc.stencils, if_cs,  read_stencil("generated/stencils/if_test.bin"));
 
   // Build example AST to compile
-  dprintf("\n [ Build AST ] \n");
+  dprintf("\n -- Building AST\n");
   Block *b = example_ast();
   traverse_block(b, print_ast, &(TraverseCtx){.traversal=pre_order, .data=0});
 
   // Construct continuation passing style graph of our ast
-  dprintf("\n [ Construct CPS graph ] \n");
+  dprintf("\n -- Constructng CPS graph \n");
   IrNode *n = transform_ast(b);
   print_cps_graph(n);
 
   // Do the magic
-  dprintf("\n [ Compile ]\n");
+  dprintf("\n -- Compiling\n");
   copy_and_patch(n, &cc);
 
   // Execute the compiled code
-  dprintf(" [ Run ]\n");
+  dprintf(" -- Running code\n");
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
   void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))cc.mem.code;
@@ -69,3 +70,4 @@ Block* example_ast() {
                        block(call("add", args(identifier("test"), integer(4)))),
                        block(call("add", args(identifier("test"), integer(7))))));
 }
+
