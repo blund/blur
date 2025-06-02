@@ -16,7 +16,6 @@ typedef struct {
   Stencil add_stencil;
   Stencil if_stencil;
   Stencil stack_write_stencil;
-  uint8_t **loc_stack;
   void (*print_result)(uintptr_t stack, int result); // For debugging;
 } CompileContext;
 

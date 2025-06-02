@@ -84,12 +84,7 @@ void copy_and_patch(CpsNode *head, CompileContext* cc) {
       break;
     }
 
-    case CPS_RETURN: {
-      break;
-    }
-
-    default:
-      printf("unknown node type\n");
+    default: break;
     }
   }
 
@@ -105,13 +100,7 @@ void copy_and_patch(CpsNode *head, CompileContext* cc) {
 
       patch_hole_64(if_loc, &cc->if_stencil, 0, (uint64_t)branch1_loc);
       patch_hole_64(if_loc, &cc->if_stencil, 1, (uint64_t)branch2_loc);
-
-      printf("if %s then L%d else L%d\n",
-	     iff->cond.name,
-	     iff->then_label,
-	     iff->else_label);
-      break;
-    }
+    } break;
 
     default: break;
     }
