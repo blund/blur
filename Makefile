@@ -1,16 +1,16 @@
 .PHONY: cut gen ast
 
 # This should work with most C compilers, test at your own pleasure :)
-# cc=zig cc
+cc=zig cc
 # cc=gcc -fno-toplevel-reorder
-cc=clang
+# cc=clang
 
 # Enable debug printing for information about stencil building and cutting
 debug=-DDEBUG
 
 # Run our actual "compiler"
 run: cut
-	@$(cc) $(debug) -g -O1 -I. main.c stencil.c copy_and_patch.c ast/*.c ir/*.c -o blur
+	@$(cc) $(debug) -g -O2 -I. main.c stencil.c copy_and_patch.c ast/*.c ir/*.c -o blur
 	@./blur
 
 # Cut out stencils

@@ -6,6 +6,7 @@
 #include <bl.h>
 
 #include <ir/ir.h>
+#include <ir/transform.h>
 
 #include <copy_and_patch.h>
 
@@ -61,9 +62,6 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
   // First pass, copy machine code, patch primitives
   for (IrNode *n = head; n != NULL; n = n->next) {
     switch (n->kind) {
-    case IR_LET: {
-      break;
-    }
 
     case IR_CALL: {
       IrCall *c = &n->call_node;
@@ -72,7 +70,8 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       Stencil *add_stencil = hmget(cc->stencils, add_cs);
       uint8_t *add_loc = copy_stencil(&cc->mem, add_stencil);
 
-      patch_hole_32(add_loc, add_stencil, 0, c->args[1].integer);
+      patch_hole_32(add_loc, add_stencil, 0, stack_index(c->args[0].var.name));
+      patch_hole_32(add_loc, add_stencil, 1, c->args[1].integer);
       patch_hole_64(add_loc, add_stencil, 0, (uint64_t)cc->print_result);
 
       hmput(l, n->label, add_loc);
@@ -84,9 +83,23 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
       Stencil *if_stencil = hmget(cc->stencils, if_cs);
       uint8_t *if_loc = copy_stencil(&cc->mem, if_stencil);
+
+      patch_hole_32(if_loc, if_stencil, 0, stack_index(iff->cond.name));
+
       hmput(l, n->label, if_loc);
       break;
     }
+
+    case IR_LET: {
+      IrLet *let = &n->let_node;
+      CallSignature let_cs = {"stack_write", {ARG_IMM}};
+      Stencil *let_stencil = hmget(cc->stencils, let_cs);
+      uint8_t *let_loc = copy_stencil(&cc->mem, let_stencil);
+      hmput(l, n->label, let_loc);
+
+      patch_hole_32(let_loc, let_stencil, 0, let->var.index);
+      patch_hole_32(let_loc, let_stencil, 1, let->value.integer);
+    } break;
 
     default: break;
     }
@@ -107,6 +120,14 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       patch_hole_64(if_loc, if_stencil, 0, (uint64_t)branch1_loc);
       patch_hole_64(if_loc, if_stencil, 1, (uint64_t)branch2_loc);
     } break;
+
+    case IR_LET: {
+      IrLet *let = &n->let_node;
+      CallSignature let_cs = {"stack_write", {ARG_IMM}};
+      Stencil *let_stencil = hmget(cc->stencils, let_cs);
+      uint8_t *let_loc = hmget(l, n->label);
+      patch_hole_64(let_loc, let_stencil, 0, (uint64_t)hmget(l, n->next->label));
+    }
 
     default: break;
     }

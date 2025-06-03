@@ -13,6 +13,8 @@
 
 FuncDecl *build_add_ast();
 FuncDecl *build_if_ast();
+FuncDecl *build_stack_write_ast();
+FuncDecl *build_stack_read_ast();
 
 StringBuilder* sb;
 
@@ -23,18 +25,33 @@ typedef struct {
   StringBuilder* code;
 } PreStencil;
 
-#define num_stencils 2
+#define num_stencils 4
 
 PreStencil add_const_pre = {
     .name = "add_const",
-    .num_32_holes = 1,
+    .num_32_holes = 2,
     .num_64_holes = 1,
 };
 
 PreStencil if_test_pre = {
     .name = "if_test",
+    .num_32_holes = 1,
     .num_64_holes = 2,
 };
+
+PreStencil stack_write_pre = {
+    .name = "stack_write_imm",
+    .num_32_holes = 2,
+    .num_64_holes = 1,
+};
+
+PreStencil stack_read_pre = {
+    .name = "stack_read_imm",
+    .num_32_holes = 1,
+    .num_64_holes = 1,
+};
+
+
 
 
 PreStencil pres[num_stencils];
@@ -45,16 +62,27 @@ int main() {
 
   FuncDecl *if_ast = build_if_ast();
   FuncDecl *add_ast = build_add_ast();
+  FuncDecl *stack_write_ast = build_stack_write_ast();
+  FuncDecl *stack_read_ast = build_stack_read_ast();
 
   add_const_pre.code = new_builder(1024);
   print_func_decl(add_const_pre.code, add_ast);
-  //print_func_decl(&p, add_const_ast);
 
   if_test_pre.code = new_builder(1024);
   print_func_decl(if_test_pre.code, if_ast);
 
+  stack_write_pre.code = new_builder(1024);
+  print_func_decl(stack_write_pre.code, stack_write_ast);
+
+  stack_read_pre.code = new_builder(1024);
+  print_func_decl(stack_read_pre.code, stack_read_ast);
+
+
+
   pres[0] = add_const_pre;
   pres[1] = if_test_pre;
+  pres[2] = stack_write_pre;
+  pres[3] = stack_read_pre;
 
   StringBuilder* sb = new_builder(1024);
 
@@ -68,7 +96,7 @@ int main() {
   
     // The function (and end function to know its length)
     add_to(sb, "// Stencil generator for %s \n", pre.name);
-    add_to(sb, "%s\n", to_string(pre.code));
+    add_to(sb, "%s", to_string(pre.code));
     add_to(sb, "void %s_end() {};\n", pre.name);
     add_to(sb, "\n");
   }
@@ -101,31 +129,49 @@ int main() {
 
 #define i identifier
 FuncDecl *build_if_ast() {
-  return func_decl(type("void"),
-		   "if_test",
-		   params(var("stack", type("uintptr_t")),
-			  var("condition", type("int")),
-			  var("x", type("int"))),
-		   block(if_test(i("condition"),
+  return func_decl(type("void"), "if_test",
+                   params(var("stack", type("uintptr_t")),
+                          var("condition", type("int")), var("x", type("int"))),
+                   block(if_test(
+				 call_e("array_read", args(i("stack"), i(STR(small_hole_1)))),
 				 block(call("pointer_call",
 					    args( i("void"), i(STR(big_hole_1)),
-						  i("uintptr_t"), i("stack"),
-						  i("int"), i("x")))),
+						  i("uintptr_t"), i("stack")))),
 				 block(call("pointer_call",
 					    args( i("void"), i(STR(big_hole_2)),
-						  i("uintptr_t"), i("stack"),
-						  i("int"), i("x")))))));
+						  i("uintptr_t"), i("stack")))))));
 }
 
 FuncDecl *build_add_ast() {
-  return func_decl(type("void"),
-		   "add_const",
-		   params(var("stack", type("uintptr_t")),
-			  var("lhs", type("int"))),
-		   block(let("result", type("int"),
-				call_e("add", args(i("lhs"), i(STR(small_hole_1))))),
+  return func_decl(
+      type("void"), "add_const",
+      params(var("stack", type("uintptr_t"))),
+      block(let("result", type("int"),
+                call_e("add", args(call_e("array_read", args(i("stack"), i(STR(small_hole_1)))), i(STR(small_hole_2))))),
+            call("pointer_call",
+                 args(i("void"), i(STR(big_hole_1)), i("uintptr_t"), i("stack"),
+                      i("int"), i("result")))
+            ));
+}
+
+FuncDecl *build_stack_write_ast() {
+  return func_decl(
+      type("void"), "stack_write_imm",
+      params(var("stack", type("uintptr_t"))),
+      block(call("array_write", args(i("stack"), i(STR(small_hole_1)), i(STR(small_hole_2)))),
 			 call("pointer_call",
-			      args( i("void"), i(STR(big_hole_1)),
-				    i("uintptr_t"), i("stack"),
-				    i("int"), i("result")))));
+			      args(i("void"), i(STR(big_hole_1)), i("uintptr_t"), i("stack")
+				   ))
+			 ));
+}
+
+FuncDecl *build_stack_read_ast() {
+  return func_decl(type("void"), "stack_read_imm",
+                   params(var("stack", type("uintptr_t"))),
+                   block(let("result", type("int"),
+			     call_e("array_read", args(i("stack"), i(STR(small_hole_1))))),
+			 call("pointer_call",
+			      args(i("void"), i(STR(big_hole_1)), i("uintptr_t"), i("stack"), i("int"), i("result")
+				   ))
+			 ));
 }

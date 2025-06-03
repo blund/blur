@@ -12,5 +12,6 @@ typedef struct {
 } VarSlot;
 
 IrNode *transform_ast(Block* b);
+int stack_index(const char *name);
 
 #endif

@@ -37,6 +37,21 @@ void print_call(StringBuilder* sb, Call* c) {
     add_to(sb, " + ");
     print_expr(sb, c->args->entries[1]);
   }
+  if (!strcmp(name, "array_write")) {
+    add_to(sb, "*(int*)(");
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, "+");
+    print_expr(sb, c->args->entries[1]);
+    add_to(sb, ") = ");
+    print_expr(sb, c->args->entries[2]);
+  }
+  if (!strcmp(name, "array_read")) {
+    add_to(sb, "*(int*)(");
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, "+");
+    print_expr(sb, c->args->entries[1]);
+    add_to(sb, ")");
+  }
   if (!strcmp(name, "pointer_call")) {
     Arguments* a = c->args;
     int param_count = (a->count-2) / 2;

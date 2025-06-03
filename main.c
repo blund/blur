@@ -37,8 +37,15 @@ int main() {
 
   CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
   hmput(cc.stencils, add_cs, read_stencil("generated/stencils/add_const.bin"));
+
   CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
   hmput(cc.stencils, if_cs,  read_stencil("generated/stencils/if_test.bin"));
+
+  CallSignature stack_write_cs = {"stack_write", {ARG_IMM}};
+  hmput(cc.stencils, stack_write_cs, read_stencil("generated/stencils/stack_write_imm.bin"));
+
+  CallSignature stack_read_cs = {"stack_read", {ARG_IMM}};
+  hmput(cc.stencils, stack_read_cs, read_stencil("generated/stencils/stack_read_imm.bin"));
 
   // Build example AST to compile
   dprintf("\n -- Building AST\n");
@@ -58,15 +65,15 @@ int main() {
   dprintf(" -- Running code\n");
   int stack_[1024];
   uintptr_t stack = (uintptr_t)&stack;
-  void (*func)(uintptr_t, int, int) = (void (*)(uintptr_t, int, int))cc.mem.code;
-  func(stack, 0, 2);
+  void (*func)(uintptr_t, int) = (void (*)(uintptr_t, int))cc.mem.code;
+  func(stack, 0);
   
   return 0;
 }
 
 Block* example_ast() {
   return block(let("test", type("int"), integer(3)),
-               if_test(integer(1),
+               if_test(integer(0),
                        block(call("add", args(identifier("test"), integer(4)))),
                        block(call("add", args(identifier("test"), integer(7))))));
 }
