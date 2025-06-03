@@ -80,27 +80,16 @@ Statement *if_test(Expression* condition, Block *s1, Block* s2) {
   return s;
 }
 
-Statement *declare(char* name, Type type) {
+Statement *let(char* name, Type type ,Expression* e) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
-  s->kind = declare_statement;
+  s->kind = let_statement;
 
-  Declare* d = &s->declare;
-  d->node_type = assign_node;
-  d->name = name;
-  d->type = type;
-  return s;
-}
-
-Statement *assign(char* name, Expression* e) {
-  Statement *s = malloc(sizeof(Statement));
-  s->node_type = statement_node;
-  s->kind = assign_statement;
-
-  Assign* a = &s->assign;
-  a->node_type = assign_node;
-  a->name = name;
-  a->expr = e;
+  Let* l = &s->let;
+  l->node_type = let_node;
+  l->name = name;
+  l->type = type;
+  l->expr = e;
   return s;
 }
 

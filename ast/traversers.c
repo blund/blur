@@ -20,7 +20,7 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     if (type == block_node) {
       *depth -= 1;
     }
-    if (type == assign_node) {
+    if (type == let_node) {
       *depth -= 1;
     }
     if (type == if_node) {
@@ -54,11 +54,11 @@ void print_ast(NodeType type, void *node, TraverseCtx *ctx, TraversalType traver
     }
   } break;
 
-  case assign_node: {
+  case let_node: {
     indent_(*depth);
     *depth += 1;
-    Assign *a = node;
-    dprintf("(Assign '%s')\n", a->name);
+    Let *a = node;
+    dprintf("(Let '%s')\n", a->name);
   } break;
 
   case call_node: {

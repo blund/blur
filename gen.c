@@ -122,9 +122,7 @@ FuncDecl *build_add_ast() {
 		   "add_const",
 		   params(var("stack", type("uintptr_t")),
 			  var("lhs", type("int"))),
-		   block(
-			 declare("result", type("int")),
-			 assign("result", 
+		   block(let("result", type("int"),
 				call_e("add", args(i("lhs"), i(STR(small_hole_1))))),
 			 call("pointer_call",
 			      args( i("void"), i(STR(big_hole_1)),

@@ -20,7 +20,7 @@ typedef void (*Visit)(NodeType nt, void* data, TraverseCtx* ctx, TraversalType t
 void traverse_lit(Literal *l, Visit v, TraverseCtx* ctx);
 void traverse_expr(Expression *e, Visit v, TraverseCtx* ctx);
 void traverse_call(Call *c, Visit v, TraverseCtx* ctx);
-void traverse_assign(Assign *a, Visit v, TraverseCtx* ctx);
+void traverse_let(Let *a, Visit v, TraverseCtx* ctx);
 void traverse_block(Block *b, Visit v, TraverseCtx* ctx);
 void traverse_if(If *i, Visit v, TraverseCtx* ctx);
 void traverse_statement(Statement *s, Visit v, TraverseCtx* ctx);

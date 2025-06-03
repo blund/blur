@@ -165,9 +165,9 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
 
 int transform_statement(Statement *stmt, int cont_label) {
   switch (stmt->kind) {
-  case assign_statement: {
-    Expression *e = stmt->assign.expr;
-    IrNode *n = emit_let(from_name(stmt->assign.name), to_ir(e), cont_label);
+  case let_statement: {
+    Expression *e = stmt->let.expr;
+    IrNode *n = emit_let(from_name(stmt->let.name), to_ir(e), cont_label);
     return n->label;
   }
 

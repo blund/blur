@@ -16,7 +16,7 @@ typedef enum {
   call_node,
   expression_node,
   if_node,
-  assign_node,
+  let_node,
   statement_node,
   func_decl_node,
   type_node,
@@ -97,19 +97,13 @@ typedef struct {
 
 typedef struct {
   NodeType node_type;
+  Type type;
   char *name;
   Expression *expr;
-} Assign;
-
-typedef struct {
-  NodeType node_type;
-  char *name;
-  Type type;
-} Declare;
+} Let;
 
 typedef enum StatementKind {
-  assign_statement,
-  declare_statement,
+  let_statement,
   call_statement,
   if_statement,
 } StatementKind;
@@ -118,8 +112,7 @@ typedef struct statement {
   NodeType node_type;
   StatementKind kind;
   union {
-    Assign assign;
-    Declare declare;
+    Let let;
     Call call;
     If if_block;
   };

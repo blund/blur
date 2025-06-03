@@ -59,12 +59,8 @@ void print_call(StringBuilder* sb, Call* c) {
   }
 }
 
-void print_declare(StringBuilder* sb, Declare* a) {
-  add_to(sb, "%s %s", a->type.name, a->name);
-}
-
-void print_assign(StringBuilder* sb, Assign* a) {
-  add_to(sb, "%s = ", a->name);
+void print_let(StringBuilder* sb, Let* a) {
+  add_to(sb, "%s %s = ", a->type.name, a->name);
   print_expr(sb, a->expr);
 }
 
@@ -85,12 +81,8 @@ void print_statement(StringBuilder* sb, Statement* s) {
     print_call(sb, &s->call);
     add_to(sb, ";\n");
   }
-  if (s->kind == assign_statement) {
-    print_assign(sb, &s->assign);
-    add_to(sb, ";\n");
-  }
-  if (s->kind == declare_statement) {
-    print_declare(sb, &s->declare);
+  if (s->kind == let_statement) {
+    print_let(sb, &s->let);
     add_to(sb, ";\n");
   }
   if (s->kind == if_statement) {

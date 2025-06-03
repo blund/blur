@@ -44,14 +44,15 @@ void traverse_expr(Expression *e, Visit v, TraverseCtx* ctx) {
   v(e->node_type, e, ctx,post_order);
 }
 
-void traverse_assign(Assign *a, Visit v, TraverseCtx* ctx) {
-  v(a->node_type, a, ctx, pre_order);
-  traverse_expr(a->expr, v, ctx);
-  v(a->node_type, a, ctx,post_order);
+void traverse_type(Type *t, Visit v, TraverseCtx *ctx) {
+  v(t->node_type, t, ctx, pre_order);
+  v(t->node_type, t, ctx,post_order);
 }
 
-void traverse_declare(Declare *a, Visit v, TraverseCtx* ctx) {
+void traverse_let(Let *a, Visit v, TraverseCtx* ctx) {
   v(a->node_type, a, ctx, pre_order);
+  traverse_type(&a->type, v, ctx);
+  traverse_expr(a->expr, v, ctx);
   v(a->node_type, a, ctx,post_order);
 }
 
@@ -70,8 +71,7 @@ void traverse_if(If *i, Visit v, TraverseCtx* ctx) {
 void traverse_statement(Statement *s, Visit v, TraverseCtx* ctx) {
   v(s->node_type, s, ctx, pre_order);
   switch (s->kind) {
-  case assign_statement: traverse_assign(&s->assign, v, ctx); break;
-  case declare_statement: traverse_declare(&s->declare, v, ctx); break;
+  case let_statement: traverse_let(&s->let, v, ctx); break;
   case call_statement: traverse_call(&s->call, v, ctx); break;
   case if_statement: traverse_if(&s->if_block, v, ctx); break;
   }
@@ -94,11 +94,6 @@ void traverse_block(Block *b, Visit v, TraverseCtx *ctx) {
     }
   }
   v(b->node_type, b, ctx, post_order);
-}
-
-void traverse_type(Type *t, Visit v, TraverseCtx *ctx) {
-  v(t->node_type, t, ctx, pre_order);
-  v(t->node_type, t, ctx,post_order);
 }
 
 void traverse_var(Var *t, Visit v, TraverseCtx *ctx) {
