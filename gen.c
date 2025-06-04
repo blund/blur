@@ -15,6 +15,7 @@ FuncDecl *build_add_ast();
 FuncDecl *build_if_ast();
 FuncDecl *build_stack_write_ast();
 FuncDecl *build_stack_read_ast();
+FuncDecl *build_call_ast();
 
 StringBuilder* sb;
 
@@ -25,7 +26,7 @@ typedef struct {
   StringBuilder* code;
 } PreStencil;
 
-#define num_stencils 4
+#define num_stencils 5
 
 PreStencil add_const_pre = {
     .name = "add_const",
@@ -51,6 +52,10 @@ PreStencil stack_read_pre = {
     .num_64_holes = 1,
 };
 
+PreStencil call_pre = {
+    .name = "tailcall",
+    .num_64_holes = 1,
+};
 
 
 
@@ -64,6 +69,7 @@ int main() {
   FuncDecl *add_ast = build_add_ast();
   FuncDecl *stack_write_ast = build_stack_write_ast();
   FuncDecl *stack_read_ast = build_stack_read_ast();
+  FuncDecl *call_ast = build_call_ast();
 
   add_const_pre.code = new_builder(1024);
   print_func_decl(add_const_pre.code, add_ast);
@@ -77,12 +83,16 @@ int main() {
   stack_read_pre.code = new_builder(1024);
   print_func_decl(stack_read_pre.code, stack_read_ast);
 
+  call_pre.code = new_builder(1024);
+  print_func_decl(call_pre.code, call_ast);
+
 
 
   pres[0] = add_const_pre;
   pres[1] = if_test_pre;
   pres[2] = stack_write_pre;
   pres[3] = stack_read_pre;
+  pres[4] = call_pre;
 
   StringBuilder* sb = new_builder(1024);
 
@@ -174,4 +184,11 @@ FuncDecl *build_stack_read_ast() {
 			      args(i("void"), i(STR(big_hole_1)), i("uintptr_t"), i("stack"), i("int"), i("result")
 				   ))
 			 ));
+}
+
+FuncDecl *build_call_ast() {
+  return func_decl(type("void"), "tailcall",
+                   params(var("stack", type("uintptr_t"))),
+                   block(call("pointer_call",
+			      args(i("void"), i(STR(big_hole_1)), i("uintptr_t"), i("stack")))));
 }
