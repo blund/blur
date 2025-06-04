@@ -56,6 +56,17 @@ typedef struct {
   uint8_t* value;  // can be anything; `true` is good enough
 } CodeLocation;
 
+// @TODO 04.06.25 - If you are feeling especially inspired, take a look at
+// removing jmps when n->cont == n->label+1, i.e. when we want to jump to
+// the code directly after this code. In this case, the jmp does nothing.
+// A problem though is ensuring that we do this properly, since x86-64 is
+// crazy. It seems this is always a mov (48b8 ...) and jmp (ffe0), but we
+// would like to manuall detect this operation (through the tailcall stencil)
+// and "cut" those bytes off the end. This though depends on the functions
+// not being aligned and having one of the many nops of the architeture,
+// which we currently get with zig cc.
+
+
 void copy_and_patch(IrNode *head, CompileContext* cc) {
   CodeLocation *l = NULL;
 

@@ -1,8 +1,8 @@
 .PHONY: cut gen ast
 
 # This should work with most C compilers, test at your own pleasure :)
-cc=zig cc
-# cc=gcc -fno-toplevel-reorder
+# cc=zig cc
+cc=gcc -fno-toplevel-reorder
 # cc=clang
 
 # Enable debug printing for information about stencil building and cutting
