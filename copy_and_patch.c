@@ -103,6 +103,11 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
     }
   }
 
+  // @TODO 02.06.25 - for the general case, we can but the 'cont' label on the IrNode,
+  // so that only the Nodes that don't have a single 'cont' can use the same
+  // default case in the switch, while special nodes do. I think this
+  // generalizes, I'm not sure for now, so I am leaving this.
+
   // Second pass, patch dependent holes
   for (IrNode *n = head; n != NULL; n = n->next) {
     switch (n->kind) {

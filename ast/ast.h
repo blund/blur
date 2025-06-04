@@ -1,6 +1,14 @@
 #ifndef BLUR_AST_H
 #define BLUR_AST_H
 
+// @TODO 04.06.25 - I just had the idea to encode the NodeType for all of these
+// in the beginning byte of the pointer - if we allocate them with an arena, the
+// first bytes should be constant for all needed nodes, so during usage we can
+// simply restore theis first byte. This would save a little on cache for node
+// traversal, at the cost of computation, which can be inlined. This would
+// have to be tested though, so I am leaving it for now. It might be a fun
+// optimization to do once we are boostrapped actually.
+
 typedef struct statement Statement;
 
 typedef struct {
