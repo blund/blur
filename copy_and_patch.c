@@ -70,7 +70,7 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       Stencil *add_stencil = hmget(cc->stencils, add_cs);
       uint8_t *add_loc = copy_stencil(&cc->mem, add_stencil);
 
-      patch_hole_32(add_loc, add_stencil, 0, stack_index(c->args[0].var.name));
+      patch_hole_32(add_loc, add_stencil, 0, c->args[0].var.index*4);
       patch_hole_32(add_loc, add_stencil, 1, c->args[1].integer);
       patch_hole_64(add_loc, add_stencil, 0, (uint64_t)cc->print_result);
 
@@ -97,7 +97,7 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       uint8_t *let_loc = copy_stencil(&cc->mem, let_stencil);
       hmput(l, n->label, let_loc);
 
-      patch_hole_32(let_loc, let_stencil, 0, let->var.index);
+      patch_hole_32(let_loc, let_stencil, 0, let->var.index*4);
       patch_hole_32(let_loc, let_stencil, 1, let->value.integer);
     } break;
 
