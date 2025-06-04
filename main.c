@@ -24,7 +24,7 @@
 Block *example_ast();
 
 // Functions used for testing cps functionlaity
-void print_result(uintptr_t stack, int result) {
+void final(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
 
@@ -32,7 +32,7 @@ int main() {
   dprintf("\n [ Running Compiler ]\n");
   CompileContext cc;
   cc.mem = make_executable_memory();
-  cc.print_result = &print_result;
+  cc.final = &final;
   cc.stencils = NULL;
 
   CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
@@ -72,7 +72,7 @@ int main() {
 }
 
 Block* example_ast() {
-  return block(let("test", type("int"), integer(3)),
+  return block(let("test", type("int"), integer(2)),
                if_test(integer(0),
                        block(call("add", args(identifier("test"), integer(4)))),
                        block(call("add", args(identifier("test"), integer(7))))));

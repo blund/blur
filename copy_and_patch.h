@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
   ExecutableMemory mem;
-  void (*print_result)(uintptr_t stack, int result); // For debugging;
+  void (*final)(uintptr_t stack, int result); // For debugging;
   StencilMap *stencils;
 } CompileContext;
 

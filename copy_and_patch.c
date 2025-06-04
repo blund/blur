@@ -69,10 +69,8 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
       Stencil *add_stencil = hmget(cc->stencils, add_cs);
       uint8_t *add_loc = copy_stencil(&cc->mem, add_stencil);
-
       patch_hole_32(add_loc, add_stencil, 0, c->args[0].var.index*4);
       patch_hole_32(add_loc, add_stencil, 1, c->args[1].integer);
-      patch_hole_64(add_loc, add_stencil, 0, (uint64_t)cc->print_result);
 
       hmput(l, n->label, add_loc);
       break;
@@ -126,8 +124,25 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       CallSignature let_cs = {"stack_write", {ARG_IMM}};
       Stencil *let_stencil = hmget(cc->stencils, let_cs);
       uint8_t *let_loc = hmget(l, n->label);
-      patch_hole_64(let_loc, let_stencil, 0, (uint64_t)hmget(l, n->next->label));
+      patch_hole_64(let_loc, let_stencil, 0, (uint64_t)hmget(l, let->cont));
+    } break;
+
+    case IR_CALL: {
+      IrCall *c = &n->call_node;
+      // @TODO - select stencil from args
+      CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
+      Stencil *add_stencil = hmget(cc->stencils, add_cs);
+      uint8_t *add_loc = hmget(l, n->label);
+
+      patch_hole_64(add_loc, add_stencil, 0, (uint64_t)cc->final);
+      if (c->cont == 0)
+	patch_hole_64(add_loc, add_stencil, 0, (uint64_t)cc->final);
+      else
+	patch_hole_64(add_loc, add_stencil, 0, (uint64_t)hmget(l, c->cont));
+
+      break;
     }
+
 
     default: break;
     }
