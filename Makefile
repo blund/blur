@@ -10,13 +10,13 @@ debug=-DDEBUG
 
 # Run our actual "compiler"
 run: cut
-	@$(cc) $(debug) -g -O2 -I. main.c stencil.c copy_and_patch.c ast/*.c ir/*.c -o blur
+	@$(cc) $(debug) -g -O1 -I. main.c stencil.c copy_and_patch.c ast/*.c ir/*.c -o blur
 	@./blur
 
 # Cut out stencils
 cut: gen
 	@mkdir -p generated/stencils
-	@$(cc) $(debug) -O2 -I. cut.c -o cut
+	@$(cc) $(debug) -fno-align-functions -O2 -g -I. cut.c -o cut
 	@./cut
 
 # Generate stencils
