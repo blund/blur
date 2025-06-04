@@ -112,13 +112,13 @@ void copy_and_patch(IrNode *head, CompileContext* cc) {
       IrIf *iff = &n->if_node;
       uint8_t *if_loc = hmget(l, n->label);
 
-      uint8_t *branch1_loc = hmget(l, iff->then_label);
-      uint8_t *branch2_loc = hmget(l, iff->else_label);
+      uint8_t *then_loc = hmget(l, iff->then_label);
+      uint8_t *else_loc = hmget(l, iff->else_label);
 
       CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
       Stencil *if_stencil = hmget(cc->stencils, if_cs);
-      patch_hole_64(if_loc, if_stencil, 0, (uint64_t)branch1_loc);
-      patch_hole_64(if_loc, if_stencil, 1, (uint64_t)branch2_loc);
+      patch_hole_64(if_loc, if_stencil, 0, (uint64_t)then_loc);
+      patch_hole_64(if_loc, if_stencil, 1, (uint64_t)else_loc);
     } break;
 
     case IR_LET: {
