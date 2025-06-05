@@ -126,6 +126,13 @@ int main() {
   for_in(return_type, return_types) {
     for_to(arg_kind_1, ARG_KIND_COUNT) {
       for_to(arg_kind_2, ARG_KIND_COUNT) {
+
+        // @TODO - for these I think we replicate a lot
+        // We generate the patterns 0000, 0001, 0010, 0011.. etc,
+        // bot for each of these we also generate the count alternatives,
+        // so for 0000 we make 0, 00, 000, 0000.
+        //    for 0001 we make 0, 00, 000, 0001.
+	// I am not sure how to fix this right now
         for_to(pass_through, 5) {
 	  for_to(pass_through_types, 4) {
 	    small_ord = 0, big_ord = 0;
