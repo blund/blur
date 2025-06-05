@@ -33,42 +33,51 @@ void print_expr(StringBuilder *sb, Expression *e) {
 
 void print_call(StringBuilder* sb, Call* c) {
   char *name = c->name;
+  int arg_count = arrlen(c->args->entries);
   if (!strcmp(name, "neq")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " == ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "eq")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " == ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "lt")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " < ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "le")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " <= ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "gt")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " > ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "ge")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " >= ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "add")) {
+    assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " + ");
     print_expr(sb, c->args->entries[1]);
   }
   if (!strcmp(name, "array_write")) {
+    assert(arg_count == 3);
     add_to(sb, "*(int*)(");
     print_expr(sb, c->args->entries[0]);
     add_to(sb, "+");
@@ -77,6 +86,7 @@ void print_call(StringBuilder* sb, Call* c) {
     print_expr(sb, c->args->entries[2]);
   }
   if (!strcmp(name, "array_read")) {
+    assert(arg_count == 3);
     add_to(sb, "*(");
     print_expr(sb, c->args->entries[0]);
     add_to(sb, "*)(");
@@ -86,6 +96,7 @@ void print_call(StringBuilder* sb, Call* c) {
     add_to(sb, ")");
   }
   if (!strcmp(name, "pointer_call")) {
+    assert(arg_count >= 2 && (arg_count % 2) == 0);
     Arguments* a = c->args;
     int param_count = (arrlen(a->entries)-2) / 2;
 

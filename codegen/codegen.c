@@ -122,7 +122,7 @@ int main() {
   Expression *arg2;
 
 
-  // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through = 72
+  // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders = 288
   for_in(return_type, return_types) {
     for_to(arg_kind_1, ARG_KIND_COUNT) {
       for_to(arg_kind_2, ARG_KIND_COUNT) {
