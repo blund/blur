@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include <include/stb_ds.h>
 #include <bl.h>
 
 #include <ast/build.h>
@@ -25,13 +26,43 @@ void print_literal(StringBuilder* sb, Literal* l) {
 }
 
 void print_call(StringBuilder* sb, Call* c);
-void print_expr(StringBuilder* sb, Expression* e) {
+void print_expr(StringBuilder *sb, Expression *e) {
   if (e->kind == lit_expr) print_literal(sb, &e->lit);
   if (e->kind == call_expr) print_call(sb, &e->call);
 }
 
 void print_call(StringBuilder* sb, Call* c) {
-  char* name = c->name;
+  char *name = c->name;
+  if (!strcmp(name, "neq")) {
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " == ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "eq")) {
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " == ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "lt")) {
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " < ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "le")) {
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " <= ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "gt")) {
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " > ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "ge")) {
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " >= ");
+    print_expr(sb, c->args->entries[1]);
+  }
   if (!strcmp(name, "add")) {
     print_expr(sb, c->args->entries[0]);
     add_to(sb, " + ");
@@ -46,28 +77,30 @@ void print_call(StringBuilder* sb, Call* c) {
     print_expr(sb, c->args->entries[2]);
   }
   if (!strcmp(name, "array_read")) {
-    add_to(sb, "*(int*)(");
+    add_to(sb, "*(");
     print_expr(sb, c->args->entries[0]);
-    add_to(sb, "+");
+    add_to(sb, "*)(");
     print_expr(sb, c->args->entries[1]);
+    add_to(sb, "+");
+    print_expr(sb, c->args->entries[2]);
     add_to(sb, ")");
   }
   if (!strcmp(name, "pointer_call")) {
     Arguments* a = c->args;
-    int param_count = (a->count-2) / 2;
+    int param_count = (arrlen(a->entries)-2) / 2;
 
     add_to(sb, "((");
     print_expr(sb, a->entries[0]);
     add_to(sb, " (*)(");
     fori(param_count) {
-      if (i && (i < a->count-1)) add_to(sb, ", ");
+      if (i && (i < arrlen(a->entries)-1)) add_to(sb, ", ");
       print_expr(sb, a->entries[2+2*i]);
     }
     add_to(sb, "))");
     print_expr(sb, a->entries[1]);
     add_to(sb, ")(");
     fori(param_count) {
-      if (i && (i < a->count-1)) add_to(sb, ", ");
+      if (i && (i < arrlen(a->entries)-1)) add_to(sb, ", ");
       print_expr(sb, a->entries[3+2*i]);
     }
     add_to(sb, ")");
@@ -91,6 +124,7 @@ void print_if(StringBuilder* sb, If* i) {
 
 
 void print_statement(StringBuilder* sb, Statement* s) {
+  if (s == 0) return;
   indent(sb);
   if (s->kind == call_statement) {
     print_call(sb, &s->call);
@@ -107,7 +141,7 @@ void print_statement(StringBuilder* sb, Statement* s) {
 
 void print_block(StringBuilder* sb, Block* b) {
   depth++;
-  fori(b->count) {
+  fori(arrlen(b->statements)) {
     print_statement(sb, b->statements[i]);
   }
   depth--;
@@ -116,10 +150,10 @@ void print_block(StringBuilder* sb, Block* b) {
 
 void print_params(StringBuilder* sb, Parameters* p) {
   add_to(sb, "(");
-  fori(p->count) {
+  fori(arrlen(p->entries)) {
     Var* v = &p->entries[i];
     add_to(sb, "%s %s", v->type.name, v->name);
-    if (i < p->count-1) add_to(sb, ", ");
+    if (i < arrlen(p->entries)-1) add_to(sb, ", ");
   }
   add_to(sb, ") ");
 }

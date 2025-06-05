@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+
 #ifdef DEBUG
 #define dprintf(fmt, args...) fprintf(stderr, fmt, ## args)
 #else
@@ -42,6 +43,10 @@ int read_file(const char* filename, char** data);
 void _release_assert(const char *assertionExpr, const char *assertionFile,
                     unsigned int assertionLine, const char *assertionFunction);
 float random_float(float min, float max);
+
+#define array_size(x) sizeof((x))/sizeof((x)[0])
+#define for_in(x, y) for (int x = 0; x < array_size(y); x++)
+#define for_to(x, y) for (int x = 0; x < y; x++)
 
 #define fori(x) for (int i = 0; i < x; i++)
 #define forj(x) for (int j = 0; j < x; j++)
