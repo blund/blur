@@ -10,7 +10,6 @@ Block *block_multi(int count, ...) {
   Block *b = malloc(sizeof(Block));
   b->node_type = block_node;
   b->statements = NULL;
-  b->count = count;
 
   va_list args;
   va_start(args, count);
@@ -27,7 +26,6 @@ Parameters *params_multi(int count, ...) {
   Parameters *p = malloc(sizeof(Block));
   p->node_type = params_node;
   p->entries = NULL;
-  p->count = count;
 
   va_list args;
   va_start(args, count);
@@ -44,7 +42,6 @@ Arguments *args_multi(int count, ...) {
   Arguments *p = malloc(sizeof(Block));
   p->node_type = args_node;
   p->entries = NULL;
-  p->count = count;
 
   va_list args;
   va_start(args, count);

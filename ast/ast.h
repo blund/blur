@@ -44,7 +44,6 @@ typedef struct {
 
 typedef struct Block {
   NodeType node_type;
-  int count;
   Statement **statements;
 
   UsedVarSet* used_vars;
@@ -77,7 +76,6 @@ typedef struct expression Expression;
 
 typedef struct {
   NodeType node_type;
-  int count;
   struct expression **entries;
 } Arguments;
 
@@ -128,7 +126,6 @@ typedef struct statement {
 
 typedef struct {
   NodeType node_type;
-  int count;
   Var *entries;
 } Parameters;
 

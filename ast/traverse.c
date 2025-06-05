@@ -24,7 +24,7 @@ void traverse_expr(Expression *e, Visit v, TraverseCtx* ctx);
 
 void traverse_args(Arguments *a, Visit v, TraverseCtx* ctx) {
   v(a->node_type, a, ctx, pre_order);
-  fori(a->count)
+  fori(arrlen(a->entries))
     traverse_expr(a->entries[i], v, ctx);
   v(a->node_type, a, ctx,post_order);
 }
@@ -79,17 +79,17 @@ void traverse_statement(Statement *s, Visit v, TraverseCtx* ctx) {
 }
 
 void traverse_block(Block *b, Visit v, TraverseCtx *ctx) {
-  if (!b->count) return;
+  if (!arrlen(b->statements)) return;
   v(b->node_type, b, ctx, pre_order);
 
   if (ctx->traversal == pre_order) {
-    for (int i = 0; i < b->count; i++) {
+    for (int i = 0; i < arrlen(b->statements); i++) {
       traverse_statement(b->statements[i], v, ctx);
     }
   }
 
   if (ctx->traversal == post_order) {
-    for(int i = b->count-1;  i >= 0; i--) {
+    for(int i = arrlen(b->statements)-1;  i >= 0; i--) {
       traverse_statement(b->statements[i], v, ctx);
     }
   }
@@ -104,7 +104,7 @@ void traverse_var(Var *t, Visit v, TraverseCtx *ctx) {
 
 void traverse_params(Parameters *p, Visit v, TraverseCtx *ctx) {
   v(p->node_type, p, ctx, pre_order);
-  fori(p->count)
+  fori(arrlen(p->entries))
     traverse_var(&p->entries[i], v, ctx);
   v(p->node_type, p, ctx, post_order);
 }
