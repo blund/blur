@@ -181,6 +181,13 @@ Var pass_through_var(int n, Types rt) {
   return v;
 }
 
+void add_pass_through_params(Parameters *params, int count, int type_bits) {
+    for (int pos = 0; pos < count; ++pos) {
+        arrput(params->entries,
+            pass_through_var(pos, ((type_bits >> pos) & 1) ? UINT64_TYPE : DOUBLE_TYPE));
+    }
+}
+
 FuncDecl *build_add_ast(Types rt, Expression *arg_a, Expression *arg_b, int pass_through, int pass_through_types) {
 
   char* return_type = get_type(rt);
@@ -193,16 +200,8 @@ FuncDecl *build_add_ast(Types rt, Expression *arg_a, Expression *arg_b, int pass
   // Also, make sure we put those parameters there
   Parameters *params = params(var("stack", type("uintptr_t")));
 
-  // Pass-through arguments. We do a binary count, where 0 is uint64 and 1 is
-  // double.
-  // Pos is the amount of pass through arguments
-  for (int pos = 0; pos < pass_through; ++pos) {
-    if ((pass_through_types >> pos) & 1) {
-      arrput(params->entries, pass_through_var(pos, UINT64_TYPE));
-    } else {
-      arrput(params->entries, pass_through_var(pos, DOUBLE_TYPE));
-    }
-  }
+  // Append pass through params
+  add_pass_through_params(params, pass_through, pass_through_types);
 
   // Append arguments a or b as registers at the end
   if (arg_a == 0) arrput(params->entries, var("a", type("int")));
