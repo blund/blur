@@ -188,6 +188,14 @@ void add_pass_through_params(Parameters *params, int count, int type_bits) {
     }
 }
 
+void add_pass_through_return_args(Arguments *return_args, int count, int type_bits) {
+  for (int pos = 0; pos < count; pos++) {
+    arrput(return_args->entries, i(get_type(((type_bits >> pos) & 1) ? UINT64_TYPE : DOUBLE_TYPE)));
+    arrput(return_args->entries, i(pass_through_name(pos)));
+  }
+}
+
+
 FuncDecl *build_add_ast(Types rt, Expression *arg_a, Expression *arg_b, int pass_through, int pass_through_types) {
 
   char* return_type = get_type(rt);
@@ -220,14 +228,7 @@ FuncDecl *build_add_ast(Types rt, Expression *arg_a, Expression *arg_b, int pass
 	 identifier("uintptr_t"), identifier("stack"));
 
   // 2. Construct pass-through arguments
-  for (int pos = 0; pos < pass_through; ++pos) {
-    if ((pass_through_types >> pos) & 1) {
-      arrput(return_args->entries, identifier(get_type(UINT64_TYPE)));
-    } else {
-      arrput(return_args->entries, identifier(get_type(DOUBLE_TYPE)));
-    }
-    arrput(return_args->entries, identifier(pass_through_name(pos)));
-  }
+  add_pass_through_return_args(return_args, pass_through, pass_through_types);
 
   // 3. Result spill
   arrput(return_args->entries, identifier(return_type));
