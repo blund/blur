@@ -109,7 +109,7 @@ Expression *make_arg(Types rt, ArgumentKind kind) {
 
 FuncDecl *build_if_ast(char* return_type, char* return_sentinel, char* condition, Expression* arg1, Expression* arg2);
 
-FuncDecl *build_add_ast(Types rt, Expression *arg1, Expression *arg2, int pass_through, int pass_through_types);
+FuncDecl *build_add_ast(Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through, int pass_through_types);
 // @TODO
 /*
 Expression *make_array(char* sym1, char* sym2) {
@@ -118,15 +118,11 @@ Expression *make_array(char* sym1, char* sym2) {
 */
 
 int main() {
-  Expression* arg1;
-  Expression *arg2;
-
 
   // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders = 288
   for_in(return_type, return_types) {
     for_to(arg_kind_1, ARG_KIND_COUNT) {
       for_to(arg_kind_2, ARG_KIND_COUNT) {
-
         // @TODO - for these I think we replicate a lot
         // We generate the patterns 0000, 0001, 0010, 0011.. etc,
         // bot for each of these we also generate the count alternatives,
@@ -136,10 +132,7 @@ int main() {
         for_to(pass_through, 5) {
 	  for_to(pass_through_types, 4) {
 	    small_ord = 0, big_ord = 0;
-	    arg1 = make_arg(return_type, arg_kind_1);
-	    arg2 = make_arg(return_type, arg_kind_2);
-	    FuncDecl *add = build_add_ast(return_type, arg1, arg2, pass_through, pass_through_types);
-
+	    FuncDecl *add = build_add_ast(return_type, arg_kind_1, arg_kind_2, pass_through, pass_through_types);
 	    StringBuilder *sb = new_builder(1024);
 	    print_func_decl(sb, add);
 	    printf("%s\n", to_string(sb));
@@ -202,10 +195,19 @@ void add_pass_through_return_args(Arguments *return_args, int count, int type_bi
   }
 }
 
+char* get_add_name(Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through, int pass_through_types) {
+  char buffer[64];
+  snprintf(buffer, sizeof(buffer), "add_%d_%d_%d_%d_%d", rt, k1, k2, pass_through, pass_through_types);
+  return strdup(buffer);
+}
 
-FuncDecl *build_add_ast(Types rt, Expression *arg_a, Expression *arg_b, int pass_through, int pass_through_types) {
+FuncDecl *build_add_ast(Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through, int pass_through_types) {
 
+  char* add_name = get_add_name(rt, arg_kind_1, arg_kind_2, pass_through, pass_through_types);
+  
   char* return_type = get_type(rt);
+  Expression *arg_a = make_arg(rt, arg_kind_1);
+  Expression *arg_b = make_arg(rt, arg_kind_2);
 
   // We want to leave the 'let' statements declaring the variables empty in the
   // case that they are passed through registers.
@@ -243,7 +245,7 @@ FuncDecl *build_add_ast(Types rt, Expression *arg_a, Expression *arg_b, int pass
 
 
   // Construct the full function ast
-  return func_decl(type("void"), "add_const", params,
+  return func_decl(type("void"), add_name, params,
 		   block(let_a, let_b,
 			 let("result", type(return_type),
 			     call_e("add", args(identifier("a"), identifier("b")))),
