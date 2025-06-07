@@ -19,17 +19,68 @@
 #define _STR(x) #x
 #define STR(x) _STR(x)
 
+typedef enum {
+  ADD_OP = 0,
+} OpCodes;
+
+typedef enum {
+  REG_KIND = 0,
+  LIT_KIND,
+  VAR_KIND,
+  ARG_KIND_COUNT
+} ArgumentKind;
+
+#define MAX_STENCILS 1024
+#define MAX_HOLES_32 3
+#define MAX_HOLES_64 3
+
+// Used for saving the index binary file during
+// stencil creation
 typedef struct {
-  const char* name;
-  uint8_t *code;
+  uint8_t opcode;
+  uint32_t index;
   uint32_t code_size;
-  uint32_t num_holes_32;
-  uint32_t num_holes_64;
+  uint8_t num_holes_32;
+  uint8_t num_holes_64;
+  uint8_t pass_through_count;
+  uint8_t num_registers;
 
   // The indices into the code of the hole
-  int *holes_32;
-  int *holes_64;
+  uint8_t holes_32[MAX_HOLES_32];
+  uint8_t holes_64[MAX_HOLES_64];
 } Stencil;
+
+// Used during stencil creation to store
+// all data about stencil
+typedef struct {
+  char *name;
+  uint8_t *code;
+  Stencil stencil;
+} StencilData;
+
+// Used during compilation as 'key' into
+// the hash map with stencil data
+typedef struct {
+  uint8_t opcode;
+  uint8_t num_registers;
+  uint8_t pass_through_count;
+} StencilKey;
+
+// Used during compilation, is the 'value'
+// of the hash map of stencils
+typedef struct {
+  uint16_t index;
+  uint16_t code_size;
+  uint8_t num_holes_32;
+  uint8_t num_holes_64;
+  uint8_t holes_32[MAX_HOLES_32];
+  uint8_t holes_64[MAX_HOLES_64];
+} StencilVal;
+
+typedef struct {
+  StencilKey key;
+  StencilVal value;
+} StencilMap;
 
 Stencil* read_stencil(char *file_path);
 

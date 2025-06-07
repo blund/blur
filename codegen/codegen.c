@@ -1,4 +1,6 @@
 
+#include <math.h>
+
 #define STB_DS_IMPLEMENTATION
 #include <include/stb_ds.h>
 
@@ -67,29 +69,22 @@ char *get_cond(CondType ct) {
 
 char *return_types[] = {
     "int",
-    "float", 
     "uint64_t", 
+    "float",   // We have to do some wizardry to make these work
     "double", 
 };
 int num_return_types = sizeof(return_types)/sizeof(return_types[0]);
 
 typedef enum {
   INT_TYPE = 0,
-  FLOAT_TYPE,
   UINT64_TYPE,
+  FLOAT_TYPE,
   DOUBLE_TYPE,
 } Types;
 
 char *get_type(Types rt) {
   return return_types[rt];
 }
-
-typedef enum {
-  REG_KIND = 0,
-  LIT_KIND,
-  VAR_KIND,
-  ARG_KIND_COUNT
-} ArgumentKind;
 
 Expression *make_lit(char *sym) { return identifier(sym); }
 
@@ -109,7 +104,7 @@ Expression *make_arg(Types rt, ArgumentKind kind) {
 
 FuncDecl *build_if_ast(char* return_type, char* return_sentinel, char* condition, Expression* arg1, Expression* arg2);
 
-FuncDecl *build_add_ast(Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through, int pass_through_types);
+char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through);
 // @TODO
 /*
 Expression *make_array(char* sym1, char* sym2) {
@@ -117,62 +112,114 @@ Expression *make_array(char* sym1, char* sym2) {
 }
 */
 
+typedef struct {
+    uint8_t function_kind;        // e.g. FUNC_ADD, FUNC_IF
+    uint8_t return_type;          // 0 or 1
+    uint8_t arg1_kind;            // REG_KIND, LIT_KIND, VAR_KIND
+    uint8_t arg2_kind;
+    uint8_t pass_through_count;   // 0–4
+    uint8_t type_bits;            // lower `count` bits used
+} FuncSigKey;
+
+typedef struct {
+  char *name;
+  uint8_t num_64_holes;
+  uint8_t num_32_holes;
+  int pass_through_count;
+  int num_registers;
+} PreStencil;
+
+PreStencil *pre_stencils = NULL;
+
 int main() {
 
+  StringBuilder *function_definitions = new_builder(1024);
   // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders = 288
-  for_in(return_type, return_types) {
+  for_to(return_type, 1) { // @TODO - for_in(return_type, return_types) for when I feel like fixing floats:)
     for_to(arg_kind_1, ARG_KIND_COUNT) {
       for_to(arg_kind_2, ARG_KIND_COUNT) {
-        // @TODO - for these I think we replicate a lot
-        // We generate the patterns 0000, 0001, 0010, 0011.. etc,
-        // bot for each of these we also generate the count alternatives,
-        // so for 0000 we make 0, 00, 000, 0000.
-        //    for 0001 we make 0, 00, 000, 0001.
-	// I am not sure how to fix this right now
-        for_to(pass_through, 5) {
-	  for_to(pass_through_types, 4) {
-	    small_ord = 0, big_ord = 0;
-	    FuncDecl *add = build_add_ast(return_type, arg_kind_1, arg_kind_2, pass_through, pass_through_types);
-	    StringBuilder *sb = new_builder(1024);
-	    print_func_decl(sb, add);
-	    printf("%s\n", to_string(sb));
-	  }
-	}
+        for_to(pass_through, 5 /*1 up to including 4*/) {
+            small_ord = 0, big_ord = 0;
+
+	    int small_holes = 0; // 0 in the case of two register arguments
+            int big_holes = 1;   // return address
+	    int num_registers = 0;
+
+	    if (arg_kind_1 == LIT_KIND || arg_kind_1 == VAR_KIND) small_holes++;
+            if (arg_kind_2 == LIT_KIND || arg_kind_2 == VAR_KIND) small_holes++;
+
+	    if (arg_kind_1 == REG_KIND) num_registers++;
+            if (arg_kind_2 == REG_KIND) num_registers++;
+	    // @TODO - handle non-stack array indexing
+
+            // Build ast and add to print-out
+	    // @TODO - this function does so much
+            char *name = build_add_ast(function_definitions, return_type, arg_kind_1, arg_kind_2,
+                                       pass_through);
+            PreStencil pre = {
+              .name = name,
+              .num_64_holes = big_holes,
+              .num_32_holes = small_holes,
+              .pass_through_count = pass_through,
+	      .num_registers = num_registers,
+	    };
+	    
+            arrput(pre_stencils, pre);
+
+        }
       }
     }
   }
 
-  /*
-  StringBuilder *sb = new_builder(1024);
-  fori(2) { // expr 1 kind
-    forj(2) { // expr 2 kind
-      small_ord = 0;
-      big_ord = 0;
-      if (i == LIT_KIND) arg1 = make_lit(small_sentinels[small_ord++]);
-      if (i == VAR_KIND) arg1 = make_var(return_type,
-					 small_sentinels[small_ord++]); if (j == LIT_KIND) arg2 =
-											     make_lit(small_sentinels[small_ord++]); if (j == VAR_KIND) arg2 =
-																			  make_var(return_type, small_sentinels[small_ord++]);
+  
+  StringBuilder* sb = new_builder(1024);
+  printf("%s\n", to_string(sb));
+  fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
 
-      for (int cond = 0; cond < COND_END; cond++) {
-        //FuncDecl *if_test = build_if_ast(get_return(INT_TYPE),
-	big_sentinels[big_ord++],
-	  //get_cond(cond), arg1, arg2);
 
-	  //reset(sb);
-	  //	print_func_decl(sb, if_test);
-	  //	printf("%s\n", to_string(sb));
-	  }
-    }
+  // generate our generation file...
+  add_to(sb, "#include \"stddef.h\"\n");
+  add_to(sb, "#include \"stdint.h\"\n");
+  add_to(sb, "#include \"../stencil.h\"\n");
+  add_to(sb, "\n");
+
+  add_to(sb, to_string(function_definitions));
+
+  int num_stencils = arrlen(pre_stencils);
+  
+  // Build a list of stencils to use for cutting later
+  StringBuilder *fun_list = new_builder(128);
+  add_to(fun_list, "// Here we construct a list of our generated stencils that we\n");
+  add_to(fun_list, "// will operate on later\n");
+  add_to(fun_list, "int num_stencils = %d;\n", num_stencils);
+  add_to(fun_list, "StencilData stencils[%d];\n", num_stencils);
+  add_to(sb, "\n");
+  
+  add_to(fun_list, "void build_stencils() {\n", num_stencils);
+  fori(num_stencils) {
+    PreStencil pre = pre_stencils[i];
+
+    add_to(fun_list, "stencils[%d] = (StencilData){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.stencil = {\n\t\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t\t.num_holes_32 = %d,\n\t\t.num_holes_64 = %d,\n\t\t.pass_through_count = %d,\n\t\t.num_registers = %d}};\n",
+	   i, pre.name, pre.name, pre.name, pre.name, pre.num_32_holes, pre.num_64_holes, pre.pass_through_count, pre.num_registers);
   }
-  */
-}
+  add_to(fun_list, "};\n");
+
+  add_to(sb, to_string(fun_list));
+
+
+  printf("%s\n", to_string(sb));
+
+  // printf("%s\n", to_string(sb));
+  FILE *f = fopen("../generated/stencils.h", "wb");
+  fwrite(to_string(sb), 1, sb->index, f);
+  
+ }
+
 char* pass_through_name(int n) {
   char buffer[64];
   snprintf(buffer, sizeof(buffer), "arg%d", n);
   return strdup(buffer);
 }
-
 
 Var pass_through_var(int n, Types rt) {
   Var v;
@@ -181,29 +228,28 @@ Var pass_through_var(int n, Types rt) {
   return v;
 }
 
-void add_pass_through_params(Parameters *params, int count, int type_bits) {
+void add_pass_through_params(Parameters *params, int count) {
     for (int pos = 0; pos < count; ++pos) {
         arrput(params->entries,
-            pass_through_var(pos, ((type_bits >> pos) & 1) ? UINT64_TYPE : DOUBLE_TYPE));
+	       pass_through_var(pos, (UINT64_TYPE)));
     }
 }
 
-void add_pass_through_return_args(Arguments *return_args, int count, int type_bits) {
+void add_pass_through_return_args(Arguments *return_args, int count) {
   for (int pos = 0; pos < count; pos++) {
-    arrput(return_args->entries, i(get_type(((type_bits >> pos) & 1) ? UINT64_TYPE : DOUBLE_TYPE)));
+    arrput(return_args->entries, i(get_type(UINT64_TYPE)));
     arrput(return_args->entries, i(pass_through_name(pos)));
   }
 }
 
-char* get_add_name(Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through, int pass_through_types) {
+char* get_fun_name(char* name, char* post, Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through) {
   char buffer[64];
-  snprintf(buffer, sizeof(buffer), "add_%d_%d_%d_%d_%d", rt, k1, k2, pass_through, pass_through_types);
+  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_%d%s", name, rt, k1, k2, pass_through, post);
   return strdup(buffer);
 }
+char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through) {
 
-FuncDecl *build_add_ast(Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through, int pass_through_types) {
-
-  char* add_name = get_add_name(rt, arg_kind_1, arg_kind_2, pass_through, pass_through_types);
+  char* add_name = get_fun_name("add", "", rt, arg_kind_1, arg_kind_2, pass_through);
   
   char* return_type = get_type(rt);
   Expression *arg_a = make_arg(rt, arg_kind_1);
@@ -211,14 +257,14 @@ FuncDecl *build_add_ast(Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind
 
   // We want to leave the 'let' statements declaring the variables empty in the
   // case that they are passed through registers.
-  Statement* let_a = arg_a ? let("a", type(return_type), arg_a) : 0;
-  Statement* let_b = arg_b ? let("b", type(return_type), arg_b) : 0;
+  Statement* let_a = arg_a ? let("a", 1, type(return_type), arg_a) : 0;
+  Statement* let_b = arg_b ? let("b", 1, type(return_type), arg_b) : 0;
 
   // Also, make sure we put those parameters there
   Parameters *params = params(var("stack", type("uintptr_t")));
 
   // Append pass through params
-  add_pass_through_params(params, pass_through, pass_through_types);
+  add_pass_through_params(params, pass_through);
 
   // Append arguments a or b as registers at the end
   if (arg_a == 0) arrput(params->entries, var("a", type("int")));
@@ -237,7 +283,7 @@ FuncDecl *build_add_ast(Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind
 	 identifier("uintptr_t"), identifier("stack"));
 
   // 2. Construct pass-through arguments
-  add_pass_through_return_args(return_args, pass_through, pass_through_types);
+  add_pass_through_return_args(return_args, pass_through);
 
   // 3. Result spill
   arrput(return_args->entries, identifier(return_type));
@@ -245,11 +291,23 @@ FuncDecl *build_add_ast(Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind
 
 
   // Construct the full function ast
-  return func_decl(type("void"), add_name, params,
-		   block(let_a, let_b,
-			 let("result", type(return_type),
-			     call_e("add", args(identifier("a"), identifier("b")))),
-			 call("pointer_call", return_args)));
+  FuncDecl *add_ast = func_decl(
+      type("void"), add_name, params,
+      block(let_a, let_b,
+            let("result", 1, type(return_type),
+                call_e("add", args(identifier("a"), identifier("b")))),
+            call("pointer_call", return_args)));
+
+
+  // Construt the "end" ast
+  char* add_end_name = get_fun_name("add", "_end", rt, arg_kind_1, arg_kind_2, pass_through);
+  // Construct the full function ast
+  FuncDecl *add_end_ast = func_decl(type("void"), add_end_name, params, NULL);
+
+  print_func_decl(sb, add_ast);
+  print_func_decl(sb, add_end_ast);
+
+  return add_name;
 }
 
 

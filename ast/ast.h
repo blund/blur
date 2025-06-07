@@ -45,7 +45,6 @@ typedef struct {
 typedef struct Block {
   NodeType node_type;
   Statement **statements;
-
   UsedVarSet* used_vars;
 } Block;
 
@@ -104,6 +103,7 @@ typedef struct {
 typedef struct {
   NodeType node_type;
   Type type;
+  int vol; // volatile?
   char *name;
   Expression *expr;
 } Let;

@@ -119,7 +119,7 @@ void print_call(StringBuilder* sb, Call* c) {
 }
 
 void print_let(StringBuilder* sb, Let* a) {
-  add_to(sb, "%s %s = ", a->type.name, a->name);
+  add_to(sb, "volatile %s %s = ", a->type.name, a->name);
   print_expr(sb, a->expr);
 }
 
@@ -150,7 +150,8 @@ void print_statement(StringBuilder* sb, Statement* s) {
   }
 }
 
-void print_block(StringBuilder* sb, Block* b) {
+void print_block(StringBuilder *sb, Block *b) {
+  if (b == NULL) return;
   depth++;
   fori(arrlen(b->statements)) {
     print_statement(sb, b->statements[i]);

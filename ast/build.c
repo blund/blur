@@ -77,7 +77,7 @@ Statement *if_test(Expression* condition, Block *s1, Block* s2) {
   return s;
 }
 
-Statement *let(char* name, Type type ,Expression* e) {
+Statement *let(char* name, int vol, Type type ,Expression* e) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
   s->kind = let_statement;
@@ -85,6 +85,7 @@ Statement *let(char* name, Type type ,Expression* e) {
   Let* l = &s->let;
   l->node_type = let_node;
   l->name = name;
+  l->vol = vol;
   l->type = type;
   l->expr = e;
   return s;
