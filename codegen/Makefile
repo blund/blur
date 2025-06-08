@@ -1,12 +1,11 @@
 
-cc=gcc -fno-toplevel-reorder -fno-align-functions 
-
+cc=gcc -fno-toplevel-reorder -fno-align-functions
 codegen:
-	gcc -g -O1 -I../ codegen.c print_c_code.c ../ast/*.c -lm -o blur
+	$(cc) -g -O1 -I../ codegen.c print_c_code.c ../ast/*.c -lm -o blur
 	@./blur
 
 cut:
-	$(cc) -g -O2 -I../ cut.c ../ast/*.c -lm -o cut-test
+	$(cc) -g -O2 -I../ cut.c ../ast/*.c -DDEBUG -o cut-test
 	@./cut-test
 
 read:

@@ -37,8 +37,18 @@ StencilVal get_stencil(StencilKey key, CopyPatchContext *ctx) {
 
 void patch_hole_32(uint8_t *code, StencilKey sk, int index, uint32_t value, CopyPatchContext* ctx) {
   StencilVal sv = get_stencil(sk, ctx);
-  int code_index = sv.holes_32[index];
-  *(uint32_t*)&(code[code_index]) = value;
+  uint8_t code_index = sv.holes_32[index];
+  uint8_t high_bit = code_index & 0x80;
+  if (high_bit) {
+    // In the case of a marked high bit, our bit pattern has been flipped for a
+    // 'lea'.
+    // We solve this by taking the two's complement of our value, and removing
+    // the high bit from the index :)
+    // This is a terrible hack but it works great
+    *(uint32_t*)&(code[code_index^0x80]) = (~value)+1;
+  } else {
+    *(uint32_t *)&(code[code_index]) = value;
+  }
 }
 
 void patch_hole_64(uint8_t *code, StencilKey sk, int index, uint64_t value, CopyPatchContext* ctx) {
@@ -65,6 +75,7 @@ ExecutableMemory make_executable_memory() {
 
 uint8_t *copy_stencil(StencilKey sk, CopyPatchContext *ctx) {
   StencilVal stencil = hmget(ctx->stencil_map, sk);
+  if (!stencil.index && !stencil.code_size) return 0;
   memcpy(&ctx->mem.code[ctx->mem.write_head], &ctx->code_blob[stencil.index], stencil.code_size);
   uint8_t* location = &ctx->mem.code[ctx->mem.write_head];
   ctx->mem.write_head += stencil.code_size;

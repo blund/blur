@@ -136,8 +136,8 @@ void print_call(StringBuilder* sb, Call* c) {
   }
 }
 
-void print_let(StringBuilder* sb, Let* a) {
-  add_to(sb, "volatile %s %s = ", a->type.name, a->name);
+void print_let(StringBuilder *sb, Let *a) {
+  add_to(sb, "%s %s = ", a->type.name, a->name);
   print_expr(sb, a->expr);
 }
 

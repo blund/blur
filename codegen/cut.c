@@ -18,6 +18,14 @@ uint32_t small_holes[4] = {
     small_hole_4,
 };
 
+uint32_t small_holes_inv[4] = {
+    ~small_hole_1+1,
+    ~small_hole_2+1,
+    ~small_hole_3+1,
+    ~small_hole_4+1,
+};
+
+
 uint64_t big_holes[4] = {
   big_hole_1,
   big_hole_2,
@@ -45,7 +53,15 @@ int main() {
     forj(s->stencil.num_holes_32) {
       for (size_t i = 0; i < s->stencil.code_size - 3; ++i) {
         uint32_t *val = (uint32_t *)&func_ptr[i]; // read 4 bytes
-        if (*val == small_holes[j]) {
+        if (*val == small_holes_inv[j]) {
+          dprintf("    -- Found 32 bit INVERSE hole %d at index %ld\n", j, i);
+          // @NOTE - we mark the high bit here, to signify that the value
+          // written to this memory should be flipped by two's complement.
+          // This happens because the compiler will sometimes flip our
+	  // value, in the case of a lea replacement for an add for example.
+	  s->stencil.holes_32[j] = i |= 0x80;
+          holes_found_32++;
+	} else if (*val == small_holes[j]) {
 	  dprintf("    -- Found 32 bit hole %d at index %ld\n", j, i);
 	  s->stencil.holes_32[j] = i;
           holes_found_32++;

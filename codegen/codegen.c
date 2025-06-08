@@ -14,24 +14,6 @@
 #include <codegen/print_c_code.h>
 
 #define i identifier
-// literal, variable, array
-
-typedef struct {
-  Type operand;
-  int spill;
-  int passthrough;
-} MetaVars;
-
-#define small_hole_1 0x3e7a91bc  
-#define small_hole_2 0xd48cf2a0  
-#define small_hole_3 0x9b5d6ee3  
-#define small_hole_4 0x71c3ab4f
-
-#define big_hole_1 0xe2d9c7b1843a56f0  
-#define big_hole_2 0x4ba1fedc02347a9d  
-#define big_hole_3 0xac5f13e7902dcb88  
-#define big_hole_4 0x1dce8b4793fa065e
-
 
 int small_ord = 0;
 char *small_sentinels[] = {
@@ -145,8 +127,6 @@ char *arith_names[] = {
     "mul", "div",
 };
 
-
-
 int main() {
   StringBuilder *function_definitions = new_builder(1024);
   // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders =
@@ -154,7 +134,13 @@ int main() {
   for_to(opcode, OP_END) {
     for_to(return_type, 1) {
       for_to(arg1_kind, ARG_COUNT) {
-	for_to(arg2_kind, ARG_COUNT) {
+        for_to(arg2_kind, ARG_COUNT) {
+          // Skip two literals (we constant fold :) )
+          if (arg1_kind == LIT_ARG && arg2_kind == LIT_ARG)
+            continue;
+          if (opcode == DIV_OP && arg2_kind == LIT_ARG)
+            continue;
+
 	  for_to(pass_through, 5 /*1 up to including 4*/) {
             small_ord = 0, big_ord = 0;
 
@@ -189,12 +175,10 @@ int main() {
       }
     }
   }
-
   
   StringBuilder* sb = new_builder(1024);
   //printf("%s\n", to_string(sb));
   fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
-
 
   // generate our generation file...
   add_to(sb, "#include \"stddef.h\"\n");
@@ -280,8 +264,8 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
 
   // We want to leave the 'let' statements declaring the variables empty in the
   // case that they are passed through registers.
-  Statement* let_a = arg_a ? let("a", 1, type(return_type), arg_a) : 0;
-  Statement* let_b = arg_b ? let("b", 1, type(return_type), arg_b) : 0;
+  Statement* let_a = arg_a ? let("a", type(return_type), arg_a) : 0;
+  Statement* let_b = arg_b ? let("b", type(return_type), arg_b) : 0;
 
   // Also, make sure we put those parameters there
   Parameters *params = params(var("stack", type("uintptr_t")));
@@ -317,7 +301,7 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
   FuncDecl *arith_ast = func_decl(
       type("void"), fun_name, params,
       block(let_a, let_b,
-            let("result", 1, type(return_type),
+            let("result", type(return_type),
                 call_e(op_name, args(identifier("a"), identifier("b")))),
             call("pointer_call", return_args)));
 
@@ -332,23 +316,3 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
 
   return fun_name;
 }
-
-
-/*
-FuncDecl *build_if_ast(char* return_type, char* return_sentinel, char*
-condition, Expression* arg1, Expression* arg2) { return func_decl( type("void"),
-"if_test", params(var("stack", type("uintptr_t")), var("x", type("int"))),
-      block(
-            let("a", type(return_type), arg1),
-            let("b", type(return_type), arg2),
-            if_test(
-
-                    call_e(condition, args(identifier("a"), identifier("b"))),
-                    block(call("pointer_call",
-                               args( i("void"), i(STR(big_hole_1)),
-                                     i("uintptr_t"), i("stack")))),
-                    block(call("pointer_call",
-                               args( i("void"), i(STR(big_hole_2)),
-                                     i("uintptr_t"), i("stack")))))));
-}
-*/

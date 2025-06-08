@@ -25,20 +25,18 @@ typedef int (*AddType)(uintptr_t, int);
 
 int main() {
   CopyPatchContext ctx = make_context("../generated/index.bin", "../generated/code_blob.bin");
-
-  StencilKey sk = {ADD_OP, LIT_ARG, VAR_ARG, 0};
+  StencilKey sk = {DIV_OP, VAR_ARG, REG_ARG, 0};
 
   uint8_t *bin = copy_stencil(sk, &ctx);
-  patch_hole_32(bin, sk, 0, 13, &ctx);
-  patch_hole_32(bin, sk, 1, 0, &ctx);
-  //patch_hole_32(bin, sk, 1, 2, &ctx);
+  if (!bin) { puts("No such stencil!"); }
+  patch_hole_32(bin, sk, 0, 4, &ctx);
   patch_hole_64(bin, sk, 0, (uint64_t)final, &ctx);
 
   AddType fn = (AddType)(bin);
 
-  uint64_t stack[32] = {0};
-  stack[0] = 11;
+  uintptr_t stack[32] = {0};
+  *(int*)((uint8_t*)stack + 4) = 8;
   
-  fn((uintptr_t)stack, 3);
+  fn((uintptr_t)stack, 2);
 }
 
