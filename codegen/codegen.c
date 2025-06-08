@@ -126,7 +126,8 @@ typedef struct {
   uint8_t num_64_holes;
   uint8_t num_32_holes;
   int pass_through_count;
-  int num_registers;
+  int arg1_kind;
+  int arg2_kind;
 } PreStencil;
 
 PreStencil *pre_stencils = NULL;
@@ -136,8 +137,8 @@ int main() {
   StringBuilder *function_definitions = new_builder(1024);
   // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders = 288
   for_to(return_type, 1) { // @TODO - for_in(return_type, return_types) for when I feel like fixing floats:)
-    for_to(arg_kind_1, ARG_KIND_COUNT) {
-      for_to(arg_kind_2, ARG_KIND_COUNT) {
+    for_to(arg1_kind, ARG_KIND_COUNT) {
+      for_to(arg2_kind, ARG_KIND_COUNT) {
         for_to(pass_through, 5 /*1 up to including 4*/) {
             small_ord = 0, big_ord = 0;
 
@@ -145,23 +146,24 @@ int main() {
             int big_holes = 1;   // return address
 	    int num_registers = 0;
 
-	    if (arg_kind_1 == LIT_KIND || arg_kind_1 == VAR_KIND) small_holes++;
-            if (arg_kind_2 == LIT_KIND || arg_kind_2 == VAR_KIND) small_holes++;
+	    if (arg1_kind == LIT_KIND || arg1_kind == VAR_KIND) small_holes++;
+            if (arg2_kind == LIT_KIND || arg2_kind == VAR_KIND) small_holes++;
 
-	    if (arg_kind_1 == REG_KIND) num_registers++;
-            if (arg_kind_2 == REG_KIND) num_registers++;
+	    if (arg1_kind == REG_KIND) num_registers++;
+            if (arg2_kind == REG_KIND) num_registers++;
 	    // @TODO - handle non-stack array indexing
 
             // Build ast and add to print-out
 	    // @TODO - this function does so much
-            char *name = build_add_ast(function_definitions, return_type, arg_kind_1, arg_kind_2,
+            char *name = build_add_ast(function_definitions, return_type, arg1_kind, arg2_kind,
                                        pass_through);
             PreStencil pre = {
               .name = name,
               .num_64_holes = big_holes,
               .num_32_holes = small_holes,
               .pass_through_count = pass_through,
-	      .num_registers = num_registers,
+	      .arg1_kind = arg1_kind,
+	      .arg2_kind = arg2_kind,
 	    };
 	    
             arrput(pre_stencils, pre);
@@ -199,8 +201,8 @@ int main() {
   fori(num_stencils) {
     PreStencil pre = pre_stencils[i];
 
-    add_to(fun_list, "stencils[%d] = (StencilData){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.stencil = {\n\t\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t\t.num_holes_32 = %d,\n\t\t.num_holes_64 = %d,\n\t\t.pass_through_count = %d,\n\t\t.num_registers = %d}};\n",
-	   i, pre.name, pre.name, pre.name, pre.name, pre.num_32_holes, pre.num_64_holes, pre.pass_through_count, pre.num_registers);
+    add_to(fun_list, "stencils[%d] = (StencilData){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.stencil = {\n\t\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t\t.num_holes_32 = %d,\n\t\t.num_holes_64 = %d,\n\t\t.pass_through_count = %d,\n\t\t.arg1_kind = %d,\n\t\t.arg2_kind = %d}};\n",
+	   i, pre.name, pre.name, pre.name, pre.name, pre.num_32_holes, pre.num_64_holes, pre.pass_through_count, pre.arg1_kind, pre.arg2_kind);
   }
   add_to(fun_list, "};\n");
 
@@ -247,13 +249,13 @@ char* get_fun_name(char* name, char* post, Types rt, ArgumentKind k1, ArgumentKi
   snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_%d%s", name, rt, k1, k2, pass_through, post);
   return strdup(buffer);
 }
-char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through) {
+char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
 
-  char* add_name = get_fun_name("add", "", rt, arg_kind_1, arg_kind_2, pass_through);
+  char* add_name = get_fun_name("add", "", rt, arg1_kind, arg2_kind, pass_through);
   
   char* return_type = get_type(rt);
-  Expression *arg_a = make_arg(rt, arg_kind_1);
-  Expression *arg_b = make_arg(rt, arg_kind_2);
+  Expression *arg_a = make_arg(rt, arg1_kind);
+  Expression *arg_b = make_arg(rt, arg2_kind);
 
   // We want to leave the 'let' statements declaring the variables empty in the
   // case that they are passed through registers.
@@ -300,7 +302,7 @@ char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg_kind_1, Argume
 
 
   // Construt the "end" ast
-  char* add_end_name = get_fun_name("add", "_end", rt, arg_kind_1, arg_kind_2, pass_through);
+  char* add_end_name = get_fun_name("add", "_end", rt, arg1_kind, arg2_kind, pass_through);
   // Construct the full function ast
   FuncDecl *add_end_ast = func_decl(type("void"), add_end_name, params, NULL);
 

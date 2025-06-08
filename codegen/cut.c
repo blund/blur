@@ -79,7 +79,7 @@ int main() {
     StencilData *s = &stencils[i];
     s->stencil.index = index;
 
-    printf("%d %d %d\n", s->stencil.opcode, s->stencil.num_registers, s->stencil.pass_through_count);
+    printf("%d %d %d %d\n", s->stencil.opcode, s->stencil.arg1_kind, s->stencil.arg2_kind, s->stencil.pass_through_count);
     printf(" index: %d code_size: %d\n", index, s->stencil.code_size);
     fwrite(s->code, s->stencil.code_size, 1, code_file);
     index += s->stencil.code_size;

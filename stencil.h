@@ -43,7 +43,8 @@ typedef struct {
   uint8_t num_holes_32;
   uint8_t num_holes_64;
   uint8_t pass_through_count;
-  uint8_t num_registers;
+  uint8_t arg1_kind;
+  uint8_t arg2_kind;
 
   // The indices into the code of the hole
   uint8_t holes_32[MAX_HOLES_32];
@@ -62,7 +63,8 @@ typedef struct {
 // the hash map with stencil data
 typedef struct {
   uint8_t opcode;
-  uint8_t num_registers;
+  uint8_t arg1_kind;
+  uint8_t arg2_kind;
   uint8_t pass_through_count;
 } StencilKey;
 

@@ -301,7 +301,6 @@ IrNode,
   */
 }
 
-
 StencilMap *read_stencil_map(char *index_file_path) {
   FILE *index_file = fopen(index_file_path, "rb");
 
@@ -311,7 +310,8 @@ StencilMap *read_stencil_map(char *index_file_path) {
   while (fread(&s, sizeof(Stencil), 1, index_file) == 1) {
     StencilKey key = {
         .opcode = s.opcode,
-        .num_registers = s.num_registers,
+        .arg1_kind = s.arg1_kind,
+        .arg2_kind = s.arg2_kind,
         .pass_through_count = s.pass_through_count,
     };
     StencilVal val = {

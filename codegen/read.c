@@ -21,21 +21,24 @@ void final(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
 
-typedef int (*AddType)(uintptr_t, int, int);
+typedef int (*AddType)(uintptr_t, int);
 
 int main() {
   CopyPatchContext ctx = make_context("../generated/index.bin", "../generated/code_blob.bin");
 
-  StencilKey sk = {ADD_OP, 2, 0};
+  StencilKey sk = {ADD_OP, LIT_KIND, VAR_KIND, 0};
 
   uint8_t *bin = copy_stencil(sk, &ctx);
+  patch_hole_32(bin, sk, 0, 13, &ctx);
+  patch_hole_32(bin, sk, 1, 0, &ctx);
+  //patch_hole_32(bin, sk, 1, 2, &ctx);
   patch_hole_64(bin, sk, 0, (uint64_t)final, &ctx);
 
   AddType fn = (AddType)(bin);
 
-  uint32_t stack[32] = {0};
-  stack[0] = 1;
+  uint64_t stack[32] = {0};
+  stack[0] = 11;
   
-  fn(0, 3, 3);
+  fn((uintptr_t)stack, 3);
 }
 
