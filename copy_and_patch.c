@@ -28,8 +28,10 @@ CopyPatchContext make_context(char *index_path, char *code_blob_path) {
   return ctx;
 }
 
-
-StencilVal get_stencil(StencilKey key, CopyPatchContext* ctx) {
+StencilVal get_stencil(StencilKey key, CopyPatchContext *ctx) {
+  assert(key.opcode > OP_INIT && key.opcode < OP_END);
+  assert(key.arg1_kind >= REG_ARG && key.arg1_kind < ARG_COUNT);
+  assert(key.arg2_kind >= REG_ARG && key.arg2_kind < ARG_COUNT);
   return hmget(ctx->stencil_map, key);
 }
 

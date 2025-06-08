@@ -95,9 +95,9 @@ Expression *make_var(Types rt, char* sym) {
 
 Expression *make_arg(Types rt, ArgumentKind kind) {
   switch (kind) {
-  case REG_KIND: return NULL; // or however a register arg is represented
-  case LIT_KIND: return make_lit(small_sentinels[small_ord++]);
-  case VAR_KIND: return make_var(rt, small_sentinels[small_ord++]);
+  case REG_ARG: return NULL; // or however a register arg is represented
+  case LIT_ARG: return make_lit(small_sentinels[small_ord++]);
+  case VAR_ARG: return make_var(rt, small_sentinels[small_ord++]);
   default: assert(0); return 0;
   }
 }
@@ -137,8 +137,8 @@ int main() {
   StringBuilder *function_definitions = new_builder(1024);
   // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders = 288
   for_to(return_type, 1) { // @TODO - for_in(return_type, return_types) for when I feel like fixing floats:)
-    for_to(arg1_kind, ARG_KIND_COUNT) {
-      for_to(arg2_kind, ARG_KIND_COUNT) {
+    for_to(arg1_kind, ARG_COUNT) {
+      for_to(arg2_kind, ARG_COUNT) {
         for_to(pass_through, 5 /*1 up to including 4*/) {
             small_ord = 0, big_ord = 0;
 
@@ -146,11 +146,11 @@ int main() {
             int big_holes = 1;   // return address
 	    int num_registers = 0;
 
-	    if (arg1_kind == LIT_KIND || arg1_kind == VAR_KIND) small_holes++;
-            if (arg2_kind == LIT_KIND || arg2_kind == VAR_KIND) small_holes++;
+	    if (arg1_kind == LIT_ARG || arg1_kind == VAR_ARG) small_holes++;
+            if (arg2_kind == LIT_ARG || arg2_kind == VAR_ARG) small_holes++;
 
-	    if (arg1_kind == REG_KIND) num_registers++;
-            if (arg2_kind == REG_KIND) num_registers++;
+	    if (arg1_kind == REG_ARG) num_registers++;
+            if (arg2_kind == REG_ARG) num_registers++;
 	    // @TODO - handle non-stack array indexing
 
             // Build ast and add to print-out

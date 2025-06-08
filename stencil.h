@@ -20,14 +20,19 @@
 #define STR(x) _STR(x)
 
 typedef enum {
-  ADD_OP = 0,
+  OP_INIT = 0,
+  ADD_OP,
+  SUB_OP,
+  MUL_OP,
+  DIV_OP,
+  OP_END,
 } OpCodes;
 
 typedef enum {
-  REG_KIND = 0,
-  LIT_KIND,
-  VAR_KIND,
-  ARG_KIND_COUNT
+  REG_ARG = 0, // Passed in register
+  LIT_ARG,     // Passed as literal
+  VAR_ARG,     // Pass as variable (on the stack)
+  ARG_COUNT,
 } ArgumentKind;
 
 #define MAX_STENCILS 1024

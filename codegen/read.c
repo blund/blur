@@ -26,7 +26,7 @@ typedef int (*AddType)(uintptr_t, int);
 int main() {
   CopyPatchContext ctx = make_context("../generated/index.bin", "../generated/code_blob.bin");
 
-  StencilKey sk = {ADD_OP, LIT_KIND, VAR_KIND, 0};
+  StencilKey sk = {ADD_OP, LIT_ARG, VAR_ARG, 0};
 
   uint8_t *bin = copy_stencil(sk, &ctx);
   patch_hole_32(bin, sk, 0, 13, &ctx);
