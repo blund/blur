@@ -76,6 +76,24 @@ void print_call(StringBuilder* sb, Call* c) {
     add_to(sb, " + ");
     print_expr(sb, c->args->entries[1]);
   }
+  if (!strcmp(name, "sub")) {
+    assert(arg_count == 2);
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " - ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "mul")) {
+    assert(arg_count == 2);
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " * ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "div")) {
+    assert(arg_count == 2);
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " / ");
+    print_expr(sb, c->args->entries[1]);
+  }
   if (!strcmp(name, "array_write")) {
     assert(arg_count == 3);
     add_to(sb, "*(int*)(");

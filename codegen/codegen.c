@@ -104,7 +104,7 @@ Expression *make_arg(Types rt, ArgumentKind kind) {
 
 FuncDecl *build_if_ast(char* return_type, char* return_sentinel, char* condition, Expression* arg1, Expression* arg2);
 
-char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through);
+char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through);
 // @TODO
 /*
 Expression *make_array(char* sym1, char* sym2) {
@@ -122,7 +122,8 @@ typedef struct {
 } FuncSigKey;
 
 typedef struct {
-  char *name;
+  char* name;
+  uint8_t opcode;
   uint8_t num_64_holes;
   uint8_t num_32_holes;
   int pass_through_count;
@@ -132,14 +133,29 @@ typedef struct {
 
 PreStencil *pre_stencils = NULL;
 
-int main() {
+char *arith_ops[] = {
+    "+",
+    "-",
+    "*",
+    "/",
+};
 
+char *arith_names[] = {
+    "add", "sub",
+    "mul", "div",
+};
+
+
+
+int main() {
   StringBuilder *function_definitions = new_builder(1024);
-  // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders = 288
-  for_to(return_type, 1) { // @TODO - for_in(return_type, return_types) for when I feel like fixing floats:)
-    for_to(arg1_kind, ARG_COUNT) {
-      for_to(arg2_kind, ARG_COUNT) {
-        for_to(pass_through, 5 /*1 up to including 4*/) {
+  // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders =
+  // 288
+  for_to(opcode, OP_END) {
+    for_to(return_type, 1) {
+      for_to(arg1_kind, ARG_COUNT) {
+	for_to(arg2_kind, ARG_COUNT) {
+	  for_to(pass_through, 5 /*1 up to including 4*/) {
             small_ord = 0, big_ord = 0;
 
 	    int small_holes = 0; // 0 in the case of two register arguments
@@ -155,10 +171,11 @@ int main() {
 
             // Build ast and add to print-out
 	    // @TODO - this function does so much
-            char *name = build_add_ast(function_definitions, return_type, arg1_kind, arg2_kind,
+            char *name = build_arith_ast(function_definitions, opcode, return_type, arg1_kind, arg2_kind,
                                        pass_through);
             PreStencil pre = {
               .name = name,
+              .opcode = opcode,
               .num_64_holes = big_holes,
               .num_32_holes = small_holes,
               .pass_through_count = pass_through,
@@ -167,15 +184,15 @@ int main() {
 	    };
 	    
             arrput(pre_stencils, pre);
-
-        }
+          }
+	}
       }
     }
   }
 
   
   StringBuilder* sb = new_builder(1024);
-  printf("%s\n", to_string(sb));
+  //printf("%s\n", to_string(sb));
   fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
 
 
@@ -201,15 +218,15 @@ int main() {
   fori(num_stencils) {
     PreStencil pre = pre_stencils[i];
 
-    add_to(fun_list, "stencils[%d] = (StencilData){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.stencil = {\n\t\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t\t.num_holes_32 = %d,\n\t\t.num_holes_64 = %d,\n\t\t.pass_through_count = %d,\n\t\t.arg1_kind = %d,\n\t\t.arg2_kind = %d}};\n",
-	   i, pre.name, pre.name, pre.name, pre.name, pre.num_32_holes, pre.num_64_holes, pre.pass_through_count, pre.arg1_kind, pre.arg2_kind);
+    add_to(fun_list, "stencils[%d] = (StencilData){ \n\t.name = \"%s\",\n\t.code = (uint8_t*)%s,\n\t.stencil = {\n\t\t.opcode = %d,\n\t\t.code_size = (uint32_t)((uint8_t*)%s_end - (uint8_t*)%s),\n\t\t.num_holes_32 = %d,\n\t\t.num_holes_64 = %d,\n\t\t.pass_through_count = %d,\n\t\t.arg1_kind = %d,\n\t\t.arg2_kind = %d}};\n",
+	   i, pre.name, pre.name, pre.opcode, pre.name, pre.name, pre.num_32_holes, pre.num_64_holes, pre.pass_through_count, pre.arg1_kind, pre.arg2_kind);
   }
   add_to(fun_list, "};\n");
 
   add_to(sb, to_string(fun_list));
 
 
-  printf("%s\n", to_string(sb));
+  //printf("%s\n", to_string(sb));
 
   // printf("%s\n", to_string(sb));
   FILE *f = fopen("../generated/stencils.h", "wb");
@@ -246,13 +263,17 @@ void add_pass_through_return_args(Arguments *return_args, int count) {
 
 char* get_fun_name(char* name, char* post, Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through) {
   char buffer[64];
-  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_%d%s", name, rt, k1, k2, pass_through, post);
+  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_%d%s", name, rt, k1, k2,
+           pass_through, post);
   return strdup(buffer);
 }
-char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
+char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
 
-  char* add_name = get_fun_name("add", "", rt, arg1_kind, arg2_kind, pass_through);
+  char* op_name = arith_names[op];
   
+  char* fun_name = get_fun_name(op_name, "", rt, arg1_kind, arg2_kind, pass_through);
+  
+  //printf("%s\n", fun_name);
   char* return_type = get_type(rt);
   Expression *arg_a = make_arg(rt, arg1_kind);
   Expression *arg_b = make_arg(rt, arg2_kind);
@@ -293,23 +314,23 @@ char *build_add_ast(StringBuilder *sb, Types rt, ArgumentKind arg1_kind, Argumen
 
 
   // Construct the full function ast
-  FuncDecl *add_ast = func_decl(
-      type("void"), add_name, params,
+  FuncDecl *arith_ast = func_decl(
+      type("void"), fun_name, params,
       block(let_a, let_b,
             let("result", 1, type(return_type),
-                call_e("add", args(identifier("a"), identifier("b")))),
+                call_e(op_name, args(identifier("a"), identifier("b")))),
             call("pointer_call", return_args)));
 
 
   // Construt the "end" ast
-  char* add_end_name = get_fun_name("add", "_end", rt, arg1_kind, arg2_kind, pass_through);
+  char* fun_end_name = get_fun_name(op_name, "_end", rt, arg1_kind, arg2_kind, pass_through);
   // Construct the full function ast
-  FuncDecl *add_end_ast = func_decl(type("void"), add_end_name, params, NULL);
+  FuncDecl *arith_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
 
-  print_func_decl(sb, add_ast);
-  print_func_decl(sb, add_end_ast);
+  print_func_decl(sb, arith_ast);
+  print_func_decl(sb, arith_end_ast);
 
-  return add_name;
+  return fun_name;
 }
 
 

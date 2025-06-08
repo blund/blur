@@ -20,18 +20,19 @@
 #define STR(x) _STR(x)
 
 typedef enum {
-  OP_INIT = 0,
-  ADD_OP,
+  OP_INIT = -1,
+  ADD_OP  = 0,
   SUB_OP,
   MUL_OP,
   DIV_OP,
   OP_END,
-} OpCodes;
+} OpCode;
 
 typedef enum {
-  REG_ARG = 0, // Passed in register
-  LIT_ARG,     // Passed as literal
-  VAR_ARG,     // Pass as variable (on the stack)
+  ARG_INIT = -1,
+  REG_ARG  = 0, // Passed in register
+  LIT_ARG,      // Passed as literal
+  VAR_ARG,      // Pass as variable (on the stack)
   ARG_COUNT,
 } ArgumentKind;
 
