@@ -43,10 +43,6 @@ int main() {
     StencilData* s = &stencils[i];
     printf("Stencil %s code size: %d\n", s->name, s->stencil.code_size);
 
-    if (strncmp(s->name, "add", 3) == 0) {
-      s->stencil.opcode = ADD_OP;
-    }
-    
     uint8_t *func_ptr = (uint8_t *)s->code;
 
     int holes_found_32 = 0;
@@ -60,6 +56,16 @@ int main() {
           // This happens because the compiler will sometimes flip our
 	  // value, in the case of a lea replacement for an add for example.
 	  s->stencil.holes_32[j] = i |= 0x80;
+          holes_found_32++;
+        } else if ((*val)+1 == small_holes[j]) {
+	  puts("bam");
+          dprintf("    -- Found 32 bit INCREMENTED hole %d at index %ld\n", j, i);
+	  s->stencil.holes_32[j] = i |= 0x40;
+          holes_found_32++;
+        } else if (*(val-1) == small_holes[j]+1) {
+	  puts("bam");
+          dprintf("    -- Found 32 bit DECREMENTED hole %d at index %ld\n", j, i);
+	  s->stencil.holes_32[j] = i |= 0x20;
           holes_found_32++;
 	} else if (*val == small_holes[j]) {
 	  dprintf("    -- Found 32 bit hole %d at index %ld\n", j, i);

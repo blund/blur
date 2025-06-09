@@ -21,11 +21,21 @@
 
 typedef enum {
   OP_INIT = -1,
-  ADD_OP  = 0,
+  ADD_OP = 0,
   SUB_OP,
   MUL_OP,
   DIV_OP,
+  OR_OP,
+  AND_OP,
+  LT_OP,
+  LE_OP,
+  GT_OP,
+  GE_OP,
+  NEQ_OP,
   OP_END,
+  IF_OP,
+  SWRITE_OP,
+  SREAD_OP,
 } OpCode;
 
 typedef enum {
@@ -34,6 +44,7 @@ typedef enum {
   LIT_ARG,      // Passed as literal
   VAR_ARG,      // Pass as variable (on the stack)
   ARG_COUNT,
+  ARG_NONE,
 } ArgumentKind;
 
 #define MAX_STENCILS 1024

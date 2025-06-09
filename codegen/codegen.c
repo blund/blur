@@ -75,16 +75,19 @@ Expression *make_var(Types rt, char* sym) {
 }
 
 
-Expression *make_arg(Types rt, ArgumentKind kind) {
+Expression *make_arg(Types rt, ArgumentKind kind, char *name) {
+  assert(small_ord <= 4);
   switch (kind) {
-  case REG_ARG: return NULL; // or however a register arg is represented
+  case REG_ARG: return identifier(name); // or however a register arg is represented
   case LIT_ARG: return make_lit(small_sentinels[small_ord++]);
   case VAR_ARG: return make_var(rt, small_sentinels[small_ord++]);
   default: assert(0); return 0;
   }
 }
 
-FuncDecl *build_if_ast(char* return_type, char* return_sentinel, char* condition, Expression* arg1, Expression* arg2);
+char *build_stack_read_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through);
+char *build_stack_write_ast(StringBuilder *sb, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through);
+char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through);
 
 char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through);
 // @TODO
@@ -120,17 +123,117 @@ char *arith_ops[] = {
     "-",
     "*",
     "/",
+    "||",
+    "&&",
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "!",
 };
 
 char *arith_names[] = {
     "add", "sub",
     "mul", "div",
+    "or", "and",
+    "lt", "le",
+    "gt", "ge",
+    "neq",
 };
 
 int main() {
   StringBuilder *function_definitions = new_builder(1024);
+
+  // Generate Conditionals
+  for_to(arg_kind, ARG_COUNT) {
+    if (arg_kind == LIT_ARG)
+      continue;
+    for_to(pass_through, 5) {
+      small_ord = 0;
+      big_ord = 0;
+      char *name = build_if_test_ast(function_definitions, arg_kind, pass_through);
+
+      // @TODO - fix small holes here
+      int small_holes = 0; // 0 in the case of two register arguments
+      int big_holes = 2;   // return address
+
+      if (arg_kind == LIT_ARG || arg_kind == VAR_ARG) small_holes++;
+
+      PreStencil pre = {
+        .name = name,
+        .opcode = IF_OP,
+        .num_64_holes = big_holes,
+        .num_32_holes = small_holes,
+        .pass_through_count = pass_through,
+        .arg1_kind = arg_kind,
+        .arg2_kind = ARG_NONE,
+      };
+
+      arrput(pre_stencils, pre);
+    }
+  }
+
+  // Generate stack read
+  for_to(arg1_kind, ARG_COUNT) {
+    for_to(arg2_kind, ARG_COUNT) {
+      for_to(pass_through, 5) {
+	small_ord = 0;
+        char* name = build_stack_write_ast(function_definitions, arg1_kind, arg2_kind,
+                              pass_through);
+
+      // @TODO - fix small holes here
+      int small_holes = 0; // 0 in the case of two register arguments
+      int big_holes = 1;   // return address
+
+      if (arg1_kind == LIT_ARG || arg1_kind == VAR_ARG) small_holes++;
+      if (arg2_kind == LIT_ARG || arg2_kind == VAR_ARG) small_holes++;
+
+      PreStencil pre = {
+	.name = name,
+	.opcode = SWRITE_OP,
+	.num_64_holes = big_holes,
+	.num_32_holes = small_holes,
+	.pass_through_count = pass_through,
+	.arg1_kind = arg1_kind,
+	.arg2_kind = ARG_NONE,
+      };
+
+      arrput(pre_stencils, pre);
+      }
+    }
+  }
+
+  // Generate stack write
+  for_to(arg_kind, ARG_COUNT) {
+    for_to(pass_through, 5) {
+      small_ord = 0;
+      char* name = build_stack_read_ast(function_definitions, arg_kind, pass_through);
+
+      // @TODO - fix small holes here
+      int small_holes = 0; // 0 in the case of two register arguments
+      int big_holes = 1;   // return address
+
+      if (arg_kind == LIT_ARG || arg_kind == VAR_ARG) small_holes++;
+
+      PreStencil pre = {
+	.name = name,
+	.opcode = SREAD_OP,
+	.num_64_holes = big_holes,
+	.num_32_holes = small_holes,
+	.pass_through_count = pass_through,
+	.arg1_kind = arg_kind,
+	.arg2_kind = ARG_NONE,
+      };
+
+      arrput(pre_stencils, pre);
+    }
+  }
+
+
   // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders =
   // 288
+
+  // Generate Arithmetic ops:
   for_to(opcode, OP_END) {
     for_to(return_type, 1) {
       for_to(arg1_kind, ARG_COUNT) {
@@ -138,7 +241,19 @@ int main() {
           // Skip two literals (we constant fold :) )
           if (arg1_kind == LIT_ARG && arg2_kind == LIT_ARG)
             continue;
+
+	  // These fail because of multiplication optimization
           if (opcode == DIV_OP && arg2_kind == LIT_ARG)
+            continue;
+
+	  // @NOTE - these fail because of constant folding
+          if ((opcode == OR_OP) && (arg1_kind == LIT_ARG))
+            continue;
+          if ((opcode == OR_OP) && (arg2_kind == LIT_ARG))
+            continue;
+          if (opcode == AND_OP && arg1_kind == LIT_ARG)
+            continue;
+          if (opcode == AND_OP && arg2_kind == LIT_ARG)
             continue;
 
 	  for_to(pass_through, 5 /*1 up to including 4*/) {
@@ -149,10 +264,11 @@ int main() {
 	    int num_registers = 0;
 
 	    if (arg1_kind == LIT_ARG || arg1_kind == VAR_ARG) small_holes++;
-            if (arg2_kind == LIT_ARG || arg2_kind == VAR_ARG) small_holes++;
-
+            if (arg2_kind == LIT_ARG || arg2_kind == VAR_ARG)
+              small_holes++;
 	    if (arg1_kind == REG_ARG) num_registers++;
-            if (arg2_kind == REG_ARG) num_registers++;
+	    if (arg2_kind == REG_ARG) num_registers++;
+
 	    // @TODO - handle non-stack array indexing
 
             // Build ast and add to print-out
@@ -175,7 +291,9 @@ int main() {
       }
     }
   }
-  
+
+
+  // Build output
   StringBuilder* sb = new_builder(1024);
   //printf("%s\n", to_string(sb));
   fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
@@ -251,6 +369,50 @@ char* get_fun_name(char* name, char* post, Types rt, ArgumentKind k1, ArgumentKi
            pass_through, post);
   return strdup(buffer);
 }
+
+char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through) {
+
+  char* fun_name = get_fun_name("if", "", 0, arg_kind, 0, pass_through);
+  
+  Expression *cond = make_arg(INT_TYPE, arg_kind, "condition");
+
+  cond = cond ? cond : i("condition");
+
+  /// PARAMS
+  // Also, make sure we put those parameters there
+  Parameters *params = params(var("stack", type("uintptr_t")));
+
+  // Append pass through params
+  add_pass_through_params(params, pass_through);
+
+  // Append arguments a or b as registers at the end
+  if (arg_kind == REG_ARG) arrput(params->entries, var("condition", type("int")));
+
+  
+  // 1. Pass the stack
+  Arguments *if_args =
+    args(identifier("void"), identifier(big_sentinels[big_ord]),
+	 identifier("uintptr_t"), identifier("stack"));
+
+  // 1. Pass the stack
+  Arguments *then_args =
+    args(identifier("void"), identifier(big_sentinels[big_ord+1]),
+	 identifier("uintptr_t"), identifier("stack"));
+  
+  FuncDecl *if_test_ast =
+      func_decl(type("void"), fun_name,
+                params,
+                block(if_test(cond,
+			      block(call("pointer_call", if_args)),
+			      block(call("pointer_call", then_args)))));
+
+  char* fun_end_name = get_fun_name("if", "_end", 0, arg_kind, 0, pass_through);
+  FuncDecl *if_test_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  print_func_decl(sb, if_test_ast);
+  print_func_decl(sb, if_test_end_ast);
+  return fun_name;
+}
+
 char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
 
   char* op_name = arith_names[op];
@@ -259,14 +421,15 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
   
   //printf("%s\n", fun_name);
   char* return_type = get_type(rt);
-  Expression *arg_a = make_arg(rt, arg1_kind);
-  Expression *arg_b = make_arg(rt, arg2_kind);
+  Expression *arg_a = make_arg(rt, arg1_kind, "a");
+  Expression *arg_b = make_arg(rt, arg2_kind, "b");
 
   // We want to leave the 'let' statements declaring the variables empty in the
   // case that they are passed through registers.
-  Statement* let_a = arg_a ? let("a", type(return_type), arg_a) : 0;
-  Statement* let_b = arg_b ? let("b", type(return_type), arg_b) : 0;
+  Statement* let_a = let("_a", type(return_type), arg_a);
+  Statement* let_b = let("_b", type(return_type), arg_b);
 
+  /// PARAMS
   // Also, make sure we put those parameters there
   Parameters *params = params(var("stack", type("uintptr_t")));
 
@@ -274,10 +437,11 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
   add_pass_through_params(params, pass_through);
 
   // Append arguments a or b as registers at the end
-  if (arg_a == 0) arrput(params->entries, var("a", type("int")));
-  if (arg_b == 0) arrput(params->entries, var("b", type("int")));
+  if (arg1_kind == REG_ARG) arrput(params->entries, var("a", type("int")));
+  if (arg2_kind == REG_ARG) arrput(params->entries, var("b", type("int")));
 
 
+  /// RETURN ARGS
   // Construct contuniation call
   // This consists of :
   // 1. stack
@@ -302,7 +466,7 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
       type("void"), fun_name, params,
       block(let_a, let_b,
             let("result", type(return_type),
-                call_e(op_name, args(identifier("a"), identifier("b")))),
+                call_e(op_name, args(identifier("_a"), identifier("_b")))),
             call("pointer_call", return_args)));
 
 
@@ -313,6 +477,76 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
 
   print_func_decl(sb, arith_ast);
   print_func_decl(sb, arith_end_ast);
+
+  return fun_name;
+}
+
+char *build_stack_write_ast(StringBuilder *sb, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
+
+  char* fun_name = get_fun_name("stack_write", "", 0, arg1_kind, arg2_kind, pass_through);
+
+  // Parameters
+  Parameters *params = params(var("stack", type("uintptr_t")));
+  add_pass_through_params(params, pass_through);
+  if (arg1_kind == REG_ARG) arrput(params->entries, var("index", type("int")));
+  if (arg2_kind == REG_ARG) arrput(params->entries, var("value", type("int")));
+
+  // Return args
+  Arguments *return_args =
+    args(identifier("void"), identifier(big_sentinels[big_ord]),
+	 identifier("uintptr_t"), identifier("stack"));
+  add_pass_through_return_args(return_args, pass_through);
+
+  FuncDecl *stack_write_ast = func_decl(type("void"), fun_name, params,
+                           block(call("array_write",
+                                      args(i("stack"),
+					   make_arg(INT_TYPE, arg1_kind, "index"),
+					   make_arg(INT_TYPE, arg2_kind, "value"))),
+                      call("pointer_call", return_args)));
+
+  char *fun_end_name = get_fun_name("stack_write", "_end", 0, arg1_kind,
+                                    arg2_kind, pass_through);
+
+  FuncDecl *stack_write_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  print_func_decl(sb, stack_write_ast);
+  print_func_decl(sb, stack_write_end_ast);
+
+  return fun_name;
+}
+
+char *build_stack_read_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through) {
+
+  char *fun_name = get_fun_name("stack_read", "", 0, arg_kind, 0, pass_through);
+
+  /// PARAMS
+  Parameters *params = params(var("stack", type("uintptr_t")));
+  add_pass_through_params(params, pass_through);
+  if (arg_kind == REG_ARG) arrput(params->entries, var("index", type("int")));
+
+  Expression* read_arg = make_arg(INT_TYPE, arg_kind, "index");
+  
+  // Return args
+  Arguments *return_args =
+    args(identifier("void"), identifier(big_sentinels[big_ord]),
+	 identifier("uintptr_t"), identifier("stack"));
+  add_pass_through_return_args(return_args, pass_through);
+  arrput(return_args->entries, identifier("int"));
+  arrput(return_args->entries, identifier("result"));
+
+ 
+  FuncDecl *stack_read_ast = func_decl(
+      type("void"), fun_name, params,
+      block(let("result", type("int"),
+                call_e("array_read", args(i("int"), i("stack"), read_arg))),
+            call("pointer_call",
+                 return_args)));
+
+  char *fun_end_name =
+      get_fun_name("stack_read", "_end", 0, arg_kind, 0, pass_through);
+
+  FuncDecl *stack_read_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  print_func_decl(sb, stack_read_ast);
+  print_func_decl(sb, stack_read_end_ast);
 
   return fun_name;
 }

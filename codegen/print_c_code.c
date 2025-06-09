@@ -34,6 +34,18 @@ void print_expr(StringBuilder *sb, Expression *e) {
 void print_call(StringBuilder* sb, Call* c) {
   char *name = c->name;
   int arg_count = arrlen(c->args->entries);
+  if (!strcmp(name, "and")) {
+    assert(arg_count == 2);
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " && ");
+    print_expr(sb, c->args->entries[1]);
+  }
+  if (!strcmp(name, "or")) {
+    assert(arg_count == 2);
+    print_expr(sb, c->args->entries[0]);
+    add_to(sb, " || ");
+    print_expr(sb, c->args->entries[1]);
+  }
   if (!strcmp(name, "neq")) {
     assert(arg_count == 2);
     print_expr(sb, c->args->entries[0]);

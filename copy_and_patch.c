@@ -29,23 +29,29 @@ CopyPatchContext make_context(char *index_path, char *code_blob_path) {
 }
 
 StencilVal get_stencil(StencilKey key, CopyPatchContext *ctx) {
-  assert(key.opcode > OP_INIT && key.opcode < OP_END);
-  assert(key.arg1_kind >= REG_ARG && key.arg1_kind < ARG_COUNT);
-  assert(key.arg2_kind >= REG_ARG && key.arg2_kind < ARG_COUNT);
+  assert((key.opcode > OP_INIT && key.opcode < OP_END) || key.opcode == IF_OP);
+  assert((key.arg1_kind >= REG_ARG && key.arg1_kind < ARG_COUNT) || key.arg1_kind == ARG_NONE);
+  assert((key.arg2_kind >= REG_ARG && key.arg2_kind < ARG_COUNT) || key.arg2_kind == ARG_NONE);
   return hmget(ctx->stencil_map, key);
 }
 
 void patch_hole_32(uint8_t *code, StencilKey sk, int index, uint32_t value, CopyPatchContext* ctx) {
   StencilVal sv = get_stencil(sk, ctx);
   uint8_t code_index = sv.holes_32[index];
-  uint8_t high_bit = code_index & 0x80;
-  if (high_bit) {
+  uint8_t inv_bit = code_index & 0x80;
+  uint8_t inc_bit = code_index & 0x40;
+  uint8_t dec_bit = code_index & 0x20;
+  if (inv_bit) {
     // In the case of a marked high bit, our bit pattern has been flipped for a
     // 'lea'.
     // We solve this by taking the two's complement of our value, and removing
     // the high bit from the index :)
     // This is a terrible hack but it works great
     *(uint32_t*)&(code[code_index^0x80]) = (~value)+1;
+  } else if (inc_bit) {
+    *(uint32_t*)&(code[code_index^0x80]) = value+1;
+  } else if (dec_bit) {
+    *(uint32_t*)&(code[code_index^0x80]) = value-1;
   } else {
     *(uint32_t *)&(code[code_index]) = value;
   }
