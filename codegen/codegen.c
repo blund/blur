@@ -15,6 +15,7 @@
 
 #define i identifier
 
+// 'small_ord' is used to track how many 32 bit holes are in the constructed code
 int small_ord = 0;
 char *small_sentinels[] = {
   STR(small_hole_1),
@@ -23,6 +24,7 @@ char *small_sentinels[] = {
   STR(small_hole_4),
 };
 
+// 'big_ord' is used to track how many 64 bit holes are in the constructed code
 int big_ord = 0;
 char *big_sentinels[] = {
   STR(big_hole_1),
@@ -31,31 +33,12 @@ char *big_sentinels[] = {
   STR(big_hole_4),
 };
 
-char *conditionals[] = {
-    "neq", "eq", "lt", "le", "gt", "ge",
-};
-
-typedef enum {
-  NEQ_KIND = 0,
-  EQ_KIND,
-  LT_KIND,
-  LE_KIND,
-  GT_KIND,
-  GE_KIND,
-  COND_END,
-} CondType;
-
-char *get_cond(CondType ct) {
-  return conditionals[ct];
-}
-
 char *return_types[] = {
     "int",
     "uint64_t", 
     "float",   // We have to do some wizardry to make these work
     "double", 
 };
-int num_return_types = sizeof(return_types)/sizeof(return_types[0]);
 
 typedef enum {
   INT_TYPE = 0,
@@ -64,47 +47,10 @@ typedef enum {
   DOUBLE_TYPE,
 } Types;
 
-char *get_type(Types rt) {
-  return return_types[rt];
-}
-
-Expression *make_lit(char *sym) { return identifier(sym); }
-
-Expression *make_var(Types rt, char* sym) {
-  return call_e("array_read", args(identifier(get_type(rt)), identifier("stack"), identifier(sym)));
-}
-
-
-Expression *make_arg(Types rt, ArgumentKind kind, char *name) {
-  assert(small_ord <= 4);
-  switch (kind) {
-  case REG_ARG: return identifier(name); // or however a register arg is represented
-  case LIT_ARG: return make_lit(small_sentinels[small_ord++]);
-  case VAR_ARG: return make_var(rt, small_sentinels[small_ord++]);
-  default: assert(0); return 0;
-  }
-}
-
 char *build_stack_read_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through);
 char *build_stack_write_ast(StringBuilder *sb, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through);
 char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through);
-
 char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg_kind_1, ArgumentKind arg_kind_2, int pass_through);
-// @TODO
-/*
-Expression *make_array(char* sym1, char* sym2) {
-  return call_e("array_read", args(identifier(sym1), identifier(sym2)));
-}
-*/
-
-typedef struct {
-    uint8_t function_kind;        // e.g. FUNC_ADD, FUNC_IF
-    uint8_t return_type;          // 0 or 1
-    uint8_t arg1_kind;            // REG_KIND, LIT_KIND, VAR_KIND
-    uint8_t arg2_kind;
-    uint8_t pass_through_count;   // 0–4
-    uint8_t type_bits;            // lower `count` bits used
-} FuncSigKey;
 
 typedef struct {
   char* name;
@@ -172,9 +118,9 @@ int main() {
     for_to(arg2_kind, ARG_COUNT) {
       for_to(pass_through, 5) {
 	small_ord = 0;
-	big_ord = 0;
-        char* name = build_stack_write_ast(function_definitions, arg1_kind, arg2_kind,
-                              pass_through);
+        big_ord = 0;
+
+        char* name = build_stack_write_ast(function_definitions, arg1_kind, arg2_kind, pass_through);
 
       PreStencil pre = {
 	.name = name,
@@ -196,6 +142,7 @@ int main() {
     for_to(pass_through, 5) {
       big_ord = 0;
       small_ord = 0;
+
       char* name = build_stack_read_ast(function_definitions, arg_kind, pass_through);
 
       PreStencil pre = {
@@ -211,10 +158,6 @@ int main() {
       arrput(pre_stencils, pre);
     }
   }
-
-
-  // 2 return types x 3 arg kinds x 3 arg kinds * 4 pass through * 4 reorders =
-  // 288
 
   // Generate Arithmetic ops:
   for_to(opcode, OP_END) {
@@ -265,7 +208,6 @@ int main() {
 
   // Build output
   StringBuilder* sb = new_builder(1024);
-  //printf("%s\n", to_string(sb));
   fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
 
   // generate our generation file...
@@ -297,52 +239,25 @@ int main() {
 
   add_to(sb, to_string(fun_list));
 
-
-  //printf("%s\n", to_string(sb));
-
-  // printf("%s\n", to_string(sb));
   FILE *f = fopen("../generated/stencils.h", "wb");
   fwrite(to_string(sb), 1, sb->index, f);
   
- }
-
-char* pass_through_name(int n) {
-  char buffer[64];
-  snprintf(buffer, sizeof(buffer), "arg%d", n);
-  return strdup(buffer);
 }
 
-Var pass_through_var(int n, Types rt) {
-  Var v;
-  v.name = pass_through_name(n);
-  v.type = type(get_type(rt));
-  return v;
-}
-
-void add_pass_through_return_args(Arguments *return_args, int count) {
-  for (int pos = 0; pos < count; pos++) {
-    arrput(return_args->entries, i(get_type(UINT64_TYPE)));
-    arrput(return_args->entries, i(pass_through_name(pos)));
-  }
-}
-
-void get_names(char* name, ArgumentKind k1, ArgumentKind k2, int pass_through, char** name_out, char** name_end_out) {
-  char buffer[64];
-  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d", name, k1, k2,
-           pass_through);
-  *name_out = strdup(buffer);
-
-  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_end", name, k1, k2,
-           pass_through);
-  *name_end_out = strdup(buffer);
-
-}
-
+// Forward declare some helper functions
+void get_names(char* name, ArgumentKind k1, ArgumentKind k2, int pass_through, char** name_out, char** name_end_out);
+void add_pass_through_return_args(Arguments *return_args, int count);
+Var pass_through_var(int n, Types rt);
+char *pass_through_name(int n);
 Parameters *default_params(int pass_through);
 Arguments *default_return_args(int pass_through);
+Expression *make_arg(Types rt, ArgumentKind kind, char *name);
+char *get_type(Types rt);
+Expression *make_lit(char *sym);
+Expression *make_var(Types rt, char* sym);
+
 
 char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through) {
-
   char *fun_name, *fun_name_end;
   get_names("if", arg_kind, 0, pass_through, &fun_name, &fun_name_end);
   
@@ -486,7 +401,10 @@ char *build_stack_read_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_th
 
 
 
+
 // AST builder helpers
+
+
 void add_pass_through_params(Parameters *params, int count) {
     for (int pos = 0; pos < count; ++pos) {
         arrput(params->entries,
@@ -514,5 +432,57 @@ Arguments *default_return_args(int pass_through) {
   add_pass_through_return_args(return_args, pass_through);
 
   return return_args;
+}
+
+char *get_type(Types rt) {
+  return return_types[rt];
+}
+
+Expression *make_lit(char *sym) { return identifier(sym); }
+
+Expression *make_var(Types rt, char* sym) {
+  return call_e("array_read", args(identifier(get_type(rt)), identifier("stack"), identifier(sym)));
+}
+
+Expression *make_arg(Types rt, ArgumentKind kind, char *name) {
+  assert(small_ord <= 4);
+  switch (kind) {
+  case REG_ARG: return identifier(name); // or however a register arg is represented
+  case LIT_ARG: return make_lit(small_sentinels[small_ord++]);
+  case VAR_ARG: return make_var(rt, small_sentinels[small_ord++]);
+  default: assert(0); return 0;
+  }
+}
+
+
+char* pass_through_name(int n) {
+  char buffer[64];
+  snprintf(buffer, sizeof(buffer), "arg%d", n);
+  return strdup(buffer);
+}
+
+Var pass_through_var(int n, Types rt) {
+  Var v;
+  v.name = pass_through_name(n);
+  v.type = type(get_type(rt));
+  return v;
+}
+
+void add_pass_through_return_args(Arguments *return_args, int count) {
+  for (int pos = 0; pos < count; pos++) {
+    arrput(return_args->entries, i(get_type(UINT64_TYPE)));
+    arrput(return_args->entries, i(pass_through_name(pos)));
+  }
+}
+
+void get_names(char* name, ArgumentKind k1, ArgumentKind k2, int pass_through, char** name_out, char** name_end_out) {
+  char buffer[64];
+  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d", name, k1, k2,
+           pass_through);
+  *name_out = strdup(buffer);
+
+  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_end", name, k1, k2,
+           pass_through);
+  *name_end_out = strdup(buffer);
 }
 
