@@ -153,17 +153,11 @@ int main() {
       big_ord = 0;
       char *name = build_if_test_ast(function_definitions, arg_kind, pass_through);
 
-      // @TODO - fix small holes here
-      int small_holes = 0; // 0 in the case of two register arguments
-      int big_holes = 2;   // return address
-
-      if (arg_kind == LIT_ARG || arg_kind == VAR_ARG) small_holes++;
-
       PreStencil pre = {
         .name = name,
         .opcode = IF_OP,
-        .num_64_holes = big_holes,
-        .num_32_holes = small_holes,
+        .num_64_holes = big_ord,
+        .num_32_holes = small_ord,
         .pass_through_count = pass_through,
         .arg1_kind = arg_kind,
         .arg2_kind = ARG_NONE,
@@ -178,21 +172,15 @@ int main() {
     for_to(arg2_kind, ARG_COUNT) {
       for_to(pass_through, 5) {
 	small_ord = 0;
+	big_ord = 0;
         char* name = build_stack_write_ast(function_definitions, arg1_kind, arg2_kind,
                               pass_through);
-
-      // @TODO - fix small holes here
-      int small_holes = 0; // 0 in the case of two register arguments
-      int big_holes = 1;   // return address
-
-      if (arg1_kind == LIT_ARG || arg1_kind == VAR_ARG) small_holes++;
-      if (arg2_kind == LIT_ARG || arg2_kind == VAR_ARG) small_holes++;
 
       PreStencil pre = {
 	.name = name,
 	.opcode = SWRITE_OP,
-	.num_64_holes = big_holes,
-	.num_32_holes = small_holes,
+	.num_64_holes = big_ord,
+	.num_32_holes = small_ord,
 	.pass_through_count = pass_through,
 	.arg1_kind = arg1_kind,
 	.arg2_kind = ARG_NONE,
@@ -206,20 +194,15 @@ int main() {
   // Generate stack write
   for_to(arg_kind, ARG_COUNT) {
     for_to(pass_through, 5) {
+      big_ord = 0;
       small_ord = 0;
       char* name = build_stack_read_ast(function_definitions, arg_kind, pass_through);
-
-      // @TODO - fix small holes here
-      int small_holes = 0; // 0 in the case of two register arguments
-      int big_holes = 1;   // return address
-
-      if (arg_kind == LIT_ARG || arg_kind == VAR_ARG) small_holes++;
 
       PreStencil pre = {
 	.name = name,
 	.opcode = SREAD_OP,
-	.num_64_holes = big_holes,
-	.num_32_holes = small_holes,
+	.num_64_holes = big_ord,
+	.num_32_holes = small_ord,
 	.pass_through_count = pass_through,
 	.arg1_kind = arg_kind,
 	.arg2_kind = ARG_NONE,
@@ -257,29 +240,16 @@ int main() {
             continue;
 
 	  for_to(pass_through, 5 /*1 up to including 4*/) {
-            small_ord = 0, big_ord = 0;
+            small_ord = 0;
+	    big_ord = 0;
 
-	    int small_holes = 0; // 0 in the case of two register arguments
-            int big_holes = 1;   // return address
-	    int num_registers = 0;
+            char *name = build_arith_ast(function_definitions, opcode, return_type, arg1_kind, arg2_kind, pass_through);
 
-	    if (arg1_kind == LIT_ARG || arg1_kind == VAR_ARG) small_holes++;
-            if (arg2_kind == LIT_ARG || arg2_kind == VAR_ARG)
-              small_holes++;
-	    if (arg1_kind == REG_ARG) num_registers++;
-	    if (arg2_kind == REG_ARG) num_registers++;
-
-	    // @TODO - handle non-stack array indexing
-
-            // Build ast and add to print-out
-	    // @TODO - this function does so much
-            char *name = build_arith_ast(function_definitions, opcode, return_type, arg1_kind, arg2_kind,
-                                       pass_through);
             PreStencil pre = {
               .name = name,
               .opcode = opcode,
-              .num_64_holes = big_holes,
-              .num_32_holes = small_holes,
+              .num_64_holes = big_ord,
+              .num_32_holes = small_ord,
               .pass_through_count = pass_through,
 	      .arg1_kind = arg1_kind,
 	      .arg2_kind = arg2_kind,
@@ -349,13 +319,6 @@ Var pass_through_var(int n, Types rt) {
   return v;
 }
 
-void add_pass_through_params(Parameters *params, int count) {
-    for (int pos = 0; pos < count; ++pos) {
-        arrput(params->entries,
-	       pass_through_var(pos, (UINT64_TYPE)));
-    }
-}
-
 void add_pass_through_return_args(Arguments *return_args, int count) {
   for (int pos = 0; pos < count; pos++) {
     arrput(return_args->entries, i(get_type(UINT64_TYPE)));
@@ -363,16 +326,25 @@ void add_pass_through_return_args(Arguments *return_args, int count) {
   }
 }
 
-char* get_fun_name(char* name, char* post, Types rt, ArgumentKind k1, ArgumentKind k2, int pass_through) {
+void get_names(char* name, ArgumentKind k1, ArgumentKind k2, int pass_through, char** name_out, char** name_end_out) {
   char buffer[64];
-  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_%d%s", name, rt, k1, k2,
-           pass_through, post);
-  return strdup(buffer);
+  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d", name, k1, k2,
+           pass_through);
+  *name_out = strdup(buffer);
+
+  snprintf(buffer, sizeof(buffer), "%s_%d_%d_%d_end", name, k1, k2,
+           pass_through);
+  *name_end_out = strdup(buffer);
+
 }
+
+Parameters *default_params(int pass_through);
+Arguments *default_return_args(int pass_through);
 
 char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through) {
 
-  char* fun_name = get_fun_name("if", "", 0, arg_kind, 0, pass_through);
+  char *fun_name, *fun_name_end;
+  get_names("if", arg_kind, 0, pass_through, &fun_name, &fun_name_end);
   
   Expression *cond = make_arg(INT_TYPE, arg_kind, "condition");
 
@@ -380,23 +352,18 @@ char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_throu
 
   /// PARAMS
   // Also, make sure we put those parameters there
-  Parameters *params = params(var("stack", type("uintptr_t")));
-
-  // Append pass through params
-  add_pass_through_params(params, pass_through);
-
-  // Append arguments a or b as registers at the end
+  Parameters *params = default_params(pass_through);
   if (arg_kind == REG_ARG) arrput(params->entries, var("condition", type("int")));
 
   
   // 1. Pass the stack
   Arguments *if_args =
-    args(identifier("void"), identifier(big_sentinels[big_ord]),
+    args(identifier("void"), identifier(big_sentinels[big_ord++]),
 	 identifier("uintptr_t"), identifier("stack"));
 
   // 1. Pass the stack
   Arguments *then_args =
-    args(identifier("void"), identifier(big_sentinels[big_ord+1]),
+    args(identifier("void"), identifier(big_sentinels[big_ord++]),
 	 identifier("uintptr_t"), identifier("stack"));
   
   FuncDecl *if_test_ast =
@@ -406,18 +373,19 @@ char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_throu
 			      block(call("pointer_call", if_args)),
 			      block(call("pointer_call", then_args)))));
 
-  char* fun_end_name = get_fun_name("if", "_end", 0, arg_kind, 0, pass_through);
-  FuncDecl *if_test_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  FuncDecl *if_test_end_ast = func_decl(type("void"), fun_name_end, params, NULL);
   print_func_decl(sb, if_test_ast);
   print_func_decl(sb, if_test_end_ast);
   return fun_name;
 }
 
+
 char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
 
   char* op_name = arith_names[op];
-  
-  char* fun_name = get_fun_name(op_name, "", rt, arg1_kind, arg2_kind, pass_through);
+
+  char *fun_name, *fun_name_end;
+  get_names(op_name, arg1_kind, arg2_kind, pass_through, &fun_name, &fun_name_end);
   
   //printf("%s\n", fun_name);
   char* return_type = get_type(rt);
@@ -430,33 +398,12 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
   Statement* let_b = let("_b", type(return_type), arg_b);
 
   /// PARAMS
-  // Also, make sure we put those parameters there
-  Parameters *params = params(var("stack", type("uintptr_t")));
-
-  // Append pass through params
-  add_pass_through_params(params, pass_through);
-
-  // Append arguments a or b as registers at the end
+  Parameters* params = default_params(pass_through);
   if (arg1_kind == REG_ARG) arrput(params->entries, var("a", type("int")));
   if (arg2_kind == REG_ARG) arrput(params->entries, var("b", type("int")));
 
-
   /// RETURN ARGS
-  // Construct contuniation call
-  // This consists of :
-  // 1. stack
-  // 2. all pass-through arguments
-  // 3. result spill
-
-  // 1. Pass the stack
-  Arguments *return_args =
-    args(identifier("void"), identifier(big_sentinels[big_ord]),
-	 identifier("uintptr_t"), identifier("stack"));
-
-  // 2. Construct pass-through arguments
-  add_pass_through_return_args(return_args, pass_through);
-
-  // 3. Result spill
+  Arguments* return_args = default_return_args(pass_through);
   arrput(return_args->entries, identifier(return_type));
   arrput(return_args->entries, identifier("result"));
 
@@ -471,9 +418,8 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
 
 
   // Construt the "end" ast
-  char* fun_end_name = get_fun_name(op_name, "_end", rt, arg1_kind, arg2_kind, pass_through);
   // Construct the full function ast
-  FuncDecl *arith_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  FuncDecl *arith_end_ast = func_decl(type("void"), fun_name_end, params, NULL);
 
   print_func_decl(sb, arith_ast);
   print_func_decl(sb, arith_end_ast);
@@ -483,19 +429,16 @@ char *build_arith_ast(StringBuilder *sb, OpCode op, Types rt, ArgumentKind arg1_
 
 char *build_stack_write_ast(StringBuilder *sb, ArgumentKind arg1_kind, ArgumentKind arg2_kind, int pass_through) {
 
-  char* fun_name = get_fun_name("stack_write", "", 0, arg1_kind, arg2_kind, pass_through);
+  char *fun_name, *fun_name_end;
+  get_names("stack_write", arg1_kind, arg2_kind, pass_through, &fun_name, &fun_name_end);
 
   // Parameters
-  Parameters *params = params(var("stack", type("uintptr_t")));
-  add_pass_through_params(params, pass_through);
+  Parameters* params = default_params(pass_through);
   if (arg1_kind == REG_ARG) arrput(params->entries, var("index", type("int")));
   if (arg2_kind == REG_ARG) arrput(params->entries, var("value", type("int")));
 
   // Return args
-  Arguments *return_args =
-    args(identifier("void"), identifier(big_sentinels[big_ord]),
-	 identifier("uintptr_t"), identifier("stack"));
-  add_pass_through_return_args(return_args, pass_through);
+  Arguments* return_args = default_return_args(pass_through);
 
   FuncDecl *stack_write_ast = func_decl(type("void"), fun_name, params,
                            block(call("array_write",
@@ -504,10 +447,7 @@ char *build_stack_write_ast(StringBuilder *sb, ArgumentKind arg1_kind, ArgumentK
 					   make_arg(INT_TYPE, arg2_kind, "value"))),
                       call("pointer_call", return_args)));
 
-  char *fun_end_name = get_fun_name("stack_write", "_end", 0, arg1_kind,
-                                    arg2_kind, pass_through);
-
-  FuncDecl *stack_write_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  FuncDecl *stack_write_end_ast = func_decl(type("void"), fun_name_end, params, NULL);
   print_func_decl(sb, stack_write_ast);
   print_func_decl(sb, stack_write_end_ast);
 
@@ -516,24 +456,20 @@ char *build_stack_write_ast(StringBuilder *sb, ArgumentKind arg1_kind, ArgumentK
 
 char *build_stack_read_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_through) {
 
-  char *fun_name = get_fun_name("stack_read", "", 0, arg_kind, 0, pass_through);
+  char *fun_name, *fun_name_end;
+  get_names("stack_read", arg_kind, 0, pass_through, &fun_name, &fun_name_end);
 
   /// PARAMS
-  Parameters *params = params(var("stack", type("uintptr_t")));
-  add_pass_through_params(params, pass_through);
+  Parameters* params = default_params(pass_through);
   if (arg_kind == REG_ARG) arrput(params->entries, var("index", type("int")));
 
   Expression* read_arg = make_arg(INT_TYPE, arg_kind, "index");
   
   // Return args
-  Arguments *return_args =
-    args(identifier("void"), identifier(big_sentinels[big_ord]),
-	 identifier("uintptr_t"), identifier("stack"));
-  add_pass_through_return_args(return_args, pass_through);
+  Arguments* return_args = default_return_args(pass_through);
   arrput(return_args->entries, identifier("int"));
   arrput(return_args->entries, identifier("result"));
 
- 
   FuncDecl *stack_read_ast = func_decl(
       type("void"), fun_name, params,
       block(let("result", type("int"),
@@ -541,12 +477,42 @@ char *build_stack_read_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_th
             call("pointer_call",
                  return_args)));
 
-  char *fun_end_name =
-      get_fun_name("stack_read", "_end", 0, arg_kind, 0, pass_through);
-
-  FuncDecl *stack_read_end_ast = func_decl(type("void"), fun_end_name, params, NULL);
+  FuncDecl *stack_read_end_ast = func_decl(type("void"), fun_name_end, params, NULL);
   print_func_decl(sb, stack_read_ast);
   print_func_decl(sb, stack_read_end_ast);
 
   return fun_name;
 }
+
+
+
+// AST builder helpers
+void add_pass_through_params(Parameters *params, int count) {
+    for (int pos = 0; pos < count; ++pos) {
+        arrput(params->entries,
+	       pass_through_var(pos, (UINT64_TYPE)));
+    }
+}
+
+Parameters *default_params(int pass_through) {
+  // We always get the stack
+  Parameters *params = params(var("stack", type("uintptr_t")));
+
+  // Additionally, we might get some pass through parameters
+  add_pass_through_params(params, pass_through);
+
+  return params;
+}
+
+Arguments *default_return_args(int pass_through) {
+  // We always want to pass the stack through to the next function
+  Arguments *return_args =
+    args(identifier("void"), identifier(big_sentinels[big_ord++]),
+	 identifier("uintptr_t"), identifier("stack"));
+
+  // Additionally, always pass the 'pass through' arguments onwards.
+  add_pass_through_return_args(return_args, pass_through);
+
+  return return_args;
+}
+
