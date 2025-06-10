@@ -95,7 +95,7 @@ IrNode *emit_call(char *func, IrLiteral* args, int arg_count, int cont) {
 }
 
 int transform_block(Block *block, int cont_label) {
-  for (int i = block->count - 1; i >= 0; --i) {
+  for (int i = arrlen(block->statements) - 1; i >= 0; --i) {
     cont_label = transform_statement(block->statements[i], cont_label);
   }
   return cont_label;
@@ -119,10 +119,10 @@ IrLiteral to_ir(Expression *e) {
 IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label);
 IrLiteral *transform_args(Arguments *arguments, int cont_label,
                            int *out_label) {
-  IrLiteral *args = malloc(sizeof(IrLiteral) * arguments->count);
+  IrLiteral *args = malloc(sizeof(IrLiteral) * arrlen(arguments->entries));
   int label = cont_label;
 
-  for (int i = arguments->count - 1; i >= 0; --i) {
+  for (int i = arrlen(arguments->entries) - 1; i >= 0; --i) {
     Expression *arg = arguments->entries[i];
 
     if (arg->kind == lit_expr && arg->lit.kind == integer_lit) {
@@ -155,7 +155,7 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
     int new_label;
     Call *call = &expr->call;
     IrLiteral *args = transform_args(call->args, cont_label, &new_label);
-    IrNode *n = emit_call(call->name, args, call->args->count, new_label);
+    IrNode *n = emit_call(call->name, args, arrlen(call->args->entries), new_label);
     return n;
   }
 
@@ -175,7 +175,7 @@ int transform_statement(Statement *stmt, int cont_label) {
     int new_label;
     Call *call = &stmt->call;
     IrLiteral *args = transform_args(call->args, cont_label, &new_label);
-    IrNode *n = emit_call(call->name, args, call->args->count, new_label);
+    IrNode *n = emit_call(call->name, args, arrlen(call->args->entries), new_label);
     return n->label;
   }
 

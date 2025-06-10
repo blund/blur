@@ -40,6 +40,7 @@ CopyPatchContext make_context(char *index_path, char *code_blob_path);
 ExecutableMemory make_executable_memory();
 uint8_t *copy_stencil(StencilKey sk, CopyPatchContext *ctx);
 void copy_and_patch(IrNode *head, CompileContext *cc);
+void copy_and_patch2(IrNode *head, CopyPatchContext* ctx);
 void patch_hole_32(uint8_t *code, StencilKey sk, int index, uint32_t value, CopyPatchContext* ctx);
 void patch_hole_64(uint8_t *code, StencilKey sk, int index, uint64_t value, CopyPatchContext* ctx);
 #endif

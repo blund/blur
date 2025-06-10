@@ -29,7 +29,7 @@ CopyPatchContext make_context(char *index_path, char *code_blob_path) {
 }
 
 StencilVal get_stencil(StencilKey key, CopyPatchContext *ctx) {
-  assert((key.opcode > OP_INIT && key.opcode < OP_END) || key.opcode == IF_OP);
+  assert(key.opcode >= ADD_OP && key.opcode < SREAD_OP);
   assert((key.arg1_kind >= REG_ARG && key.arg1_kind < ARG_COUNT) || key.arg1_kind == ARG_NONE);
   assert((key.arg2_kind >= REG_ARG && key.arg2_kind < ARG_COUNT) || key.arg2_kind == ARG_NONE);
   return hmget(ctx->stencil_map, key);
@@ -101,6 +101,12 @@ typedef struct {
   uint8_t* value;  // can be anything; `true` is good enough
 } CodeLocation;
 
+typedef struct {
+  int key;
+  StencilKey value;
+} CodeKeys;
+
+
 // @TODO 04.06.25 - If you are feeling especially inspired, take a look at
 // removing jmps when n->cont == n->label+1, i.e. when we want to jump to
 // the code directly after this code. In this case, the jmp does nothing.
@@ -113,49 +119,58 @@ typedef struct {
 
 
 void copy_and_patch2(IrNode *head, CopyPatchContext* ctx) {
-  CodeLocation *l = NULL;
+  CodeLocation *l = 0;
+  CodeKeys *ck = 0;
 
   // First pass, copy machine code, patch primitives
-  for (IrNode *n = head; n != NULL; n = n->next) {
+  for (IrNode *n = head; n != 0; n = n->next) {
     switch (n->kind) {
 
     case IR_CALL: {
       IrCall *c = &n->call_node;
-      // @TODO - select stencil from args
-      StencilKey sk = {0,1,0};
+
+      StencilKey sk = {ADD_OP,VAR_ARG,LIT_ARG, 0};
       uint8_t *add_loc = copy_stencil(sk, ctx);
+
+      printf("Add %s(%d) %d\n", c->args[0].var.name, c->args[0].var.index, c->args[1].integer);
+      
       patch_hole_32(add_loc, sk, 0, c->args[0].var.index*4, ctx);
       patch_hole_32(add_loc, sk, 1, c->args[1].integer, ctx);
 
-      hmput(l, n->label, add_loc);
+      hmput(l,  n->label, add_loc);
+      hmput(ck, n->label, sk);
       break;
     }
 
     case IR_IF: {
-      /*
+      StencilKey sk = {IF_OP,VAR_ARG,ARG_NONE, 0};
+      uint8_t *if_loc = copy_stencil(sk, ctx);
       IrIf *iff = &n->if_node;
-      CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
-      Stencil *if_stencil = hmget(cc->stencils, if_cs);
-      uint8_t *if_loc = copy_stencil(&cc->mem, if_stencil);
 
-      patch_hole_32(if_loc, if_stencil, 0, stack_index(iff->cond.name));
+      printf("%d\n", stack_index(iff->cond.name));
+      patch_hole_32(if_loc, sk, 0, stack_index(iff->cond.name)*4, ctx);
 
-      hmput(l, n->label, if_loc);
-      */
+      hmput(l,  n->label, if_loc);
+      hmput(ck, n->label, sk);
       break;
     }
 
     case IR_LET: {
-      /*
+      StencilKey sk = {SWRITE_OP,LIT_ARG,LIT_ARG, 0};
+      uint8_t *swrite_loc = copy_stencil(sk, ctx);
       IrLet *let = &n->let_node;
-      CallSignature let_cs = {"stack_write", {ARG_IMM}};
-      Stencil *let_stencil = hmget(cc->stencils, let_cs);
-      uint8_t *let_loc = copy_stencil(&cc->mem, let_stencil);
-      hmput(l, n->label, let_loc);
 
-      patch_hole_32(let_loc, let_stencil, 0, let->var.index*4);
-      patch_hole_32(let_loc, let_stencil, 1, let->value.integer);
-      */
+      printf("Let %s(%d) %d\n", let->var.name, let->var.index,
+             let->value.integer),
+
+      // @NOTE - the god forsaken assembly inverts the order on these.
+      // I'm sure it has to do with normal indexing, I just hope this
+      // is consistent
+      patch_hole_32(swrite_loc, sk, 1, let->var.index*4, ctx);
+      patch_hole_32(swrite_loc, sk, 0, let->value.integer, ctx);
+
+      hmput(l,  n->label, swrite_loc);
+      hmput(ck, n->label, sk);
     } break;
 
     default: break;
@@ -171,37 +186,28 @@ void copy_and_patch2(IrNode *head, CopyPatchContext* ctx) {
   for (IrNode *n = head; n != NULL; n = n->next) {
     switch (n->kind) {
     case IR_IF: {
-      /*
-      IrIf *iff = &n->if_node;
+      StencilKey sk = hmget(ck, n->label);
       uint8_t *if_loc = hmget(l, n->label);
+      IrIf *iff = &n->if_node;
 
       uint8_t *then_loc = hmget(l, iff->then_label);
       uint8_t *else_loc = hmget(l, iff->else_label);
-
-      CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
-      Stencil *if_stencil = hmget(cc->stencils, if_cs);
-      patch_hole_64(if_loc, if_stencil, 0, (uint64_t)then_loc);
-      patch_hole_64(if_loc, if_stencil, 1, (uint64_t)else_loc);
-      */
+      patch_hole_64(if_loc, sk, 0, (uint64_t)then_loc, ctx);
+      patch_hole_64(if_loc, sk, 1, (uint64_t)else_loc, ctx);
     } break;
 
     case IR_LET: {
-      /*
+      StencilKey sk = hmget(ck, n->label);
+      uint8_t *swrite_loc = hmget(l, n->label);
       IrLet *let = &n->let_node;
-      CallSignature let_cs = {"stack_write", {ARG_IMM}};
-      Stencil *let_stencil = hmget(cc->stencils, let_cs);
-      uint8_t *let_loc = hmget(l, n->label);
-      patch_hole_64(let_loc, let_stencil, 0, (uint64_t)hmget(l, let->cont));
-      */
+
+      patch_hole_64(swrite_loc, sk, 0, (uint64_t)hmget(l, let->cont), ctx);
     } break;
 
     case IR_CALL: {
-      IrCall *c = &n->call_node;
-      // @TODO - select stencil from args
-      CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
-      StencilKey sk = {0, 1, 0};
-
+      StencilKey sk = hmget(ck, n->label);
       uint8_t *add_loc = hmget(l, n->label);
+      IrCall *c = &n->call_node;
 
       patch_hole_64(add_loc, sk, 0, (uint64_t)ctx->final, ctx);
       if (c->cont == 0)

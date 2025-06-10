@@ -108,7 +108,7 @@ void print_call(StringBuilder* sb, Call* c) {
   }
   if (!strcmp(name, "array_write")) {
     assert(arg_count == 3);
-    add_to(sb, "*(int*)(");
+    add_to(sb, "*(int*)((uint8_t*)");
     print_expr(sb, c->args->entries[0]);
     add_to(sb, "+");
     print_expr(sb, c->args->entries[1]);
@@ -119,7 +119,7 @@ void print_call(StringBuilder* sb, Call* c) {
     assert(arg_count == 3);
     add_to(sb, "*(");
     print_expr(sb, c->args->entries[0]);
-    add_to(sb, "*)(");
+    add_to(sb, "*)((uint8_t*)");
     print_expr(sb, c->args->entries[1]);
     add_to(sb, "+");
     print_expr(sb, c->args->entries[2]);

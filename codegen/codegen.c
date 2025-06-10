@@ -129,7 +129,7 @@ int main() {
 	.num_32_holes = small_ord,
 	.pass_through_count = pass_through,
 	.arg1_kind = arg1_kind,
-	.arg2_kind = ARG_NONE,
+	.arg2_kind = arg2_kind,
       };
 
       arrput(pre_stencils, pre);
@@ -288,7 +288,7 @@ char *build_if_test_ast(StringBuilder *sb, ArgumentKind arg_kind, int pass_throu
 			      block(call("pointer_call", if_args)),
 			      block(call("pointer_call", then_args)))));
 
-  FuncDecl *if_test_end_ast = func_decl(type("void"), fun_name_end, params, NULL);
+  FuncDecl *if_test_end_ast = func_decl(type("void"), fun_name_end, params, 0);
   print_func_decl(sb, if_test_ast);
   print_func_decl(sb, if_test_end_ast);
   return fun_name;
