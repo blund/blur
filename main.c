@@ -18,8 +18,8 @@
 #include <ir/print.h>
 #include <ir/transform.h>
 
-#include <copy_and_patch.h>
-#include <stencil.h>
+#include <copy_and_patch/copy_and_patch.h>
+#include <copy_and_patch/stencil.h>
 
 Block *example_ast();
 

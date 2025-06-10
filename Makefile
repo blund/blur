@@ -8,7 +8,7 @@ cc=gcc -fno-toplevel-reorder -fno-align-functions
 
 # Run our actual "compiler"
 run:
-	@$(cc) -g -O2 -I. main.c copy_and_patch.c ast/*.c ir/*.c -lm -o blur
+	@$(cc) -g -O2 -I. main.c copy_and_patch/*.c ast/*.c ir/*.c -lm -o blur
 	@./blur
 
 gen:

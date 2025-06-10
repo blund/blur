@@ -10,7 +10,7 @@
 
 #include <ast/ast.h>
 #include <ast/build.h>
-#include <stencil.h>
+#include <copy_and_patch/stencil.h>
 #include <codegen/print_c_code.h>
 
 #define i identifier
@@ -211,9 +211,9 @@ int main() {
   // fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
 
   // generate our generation file...
-  add_to(sb, "#include \"stddef.h\"\n");
-  add_to(sb, "#include \"stdint.h\"\n");
-  add_to(sb, "#include \"../stencil.h\"\n");
+  add_to(sb, "#include <stddef.h>\n");
+  add_to(sb, "#include <stdint.h>\n");
+  add_to(sb, "#include <copy_and_patch/stencil.h>\n");
   add_to(sb, "\n");
 
   add_to(sb, to_string(function_definitions));
