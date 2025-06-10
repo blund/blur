@@ -1,4 +1,4 @@
-.PHONY: codegen
+.PHONY: gen
 
 # This should work with most C compilers, test at your own pleasure :)
 cc=gcc -fno-toplevel-reorder -fno-align-functions
@@ -12,8 +12,8 @@ run:
 	@./blur
 
 gen:
-	make -C codegen codegen
-	make -C codegen cut
+	make -C codegen generate-stencils
+	make -C codegen cut-stencils
 
 # Cleanup scripts :)
 .PHONY: clean clean-blur clean-gen clean-cut
@@ -24,4 +24,3 @@ clean-blur:
 
 clean-gen:
 	rm -rf generated
-	rm gen
