@@ -1,29 +1,19 @@
-.PHONY: cut gen ast
+.PHONY: codegen
 
 # This should work with most C compilers, test at your own pleasure :)
-# cc=zig cc
-cc=gcc -fno-toplevel-reorder
-# cc=clang
+cc=gcc -fno-toplevel-reorder -fno-align-functions
 
 # Enable debug printing for information about stencil building and cutting
-debug=-DDEBUG
+# debug=-DDEBUG
 
 # Run our actual "compiler"
-run: cut
-	@$(cc) $(debug) -g -O1 -I. main.c stencil.c copy_and_patch.c ast/*.c ir/*.c -o blur
+run:
+	@$(cc) -g -O2 -I. main.c copy_and_patch.c ast/*.c ir/*.c -lm -o blur
 	@./blur
 
-# Cut out stencils
-cut: gen
-	@mkdir -p generated/stencils
-	@$(cc) $(debug) -fno-align-functions -O2 -g -I. cut.c -o cut
-	@./cut
-
-# Generate stencils
 gen:
-	@mkdir -p generated
-	@$(cc) $(debug) -I. gen.c codegen/print_c_code.c ast/build.c -o gen
-	@./gen
+	make -C codegen codegen
+	make -C codegen cut
 
 # Cleanup scripts :)
 .PHONY: clean clean-blur clean-gen clean-cut
@@ -35,7 +25,3 @@ clean-blur:
 clean-gen:
 	rm -rf generated
 	rm gen
-
-clean-cut:
-	rm -rf stencils
-	rm cut

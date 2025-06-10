@@ -208,7 +208,7 @@ int main() {
 
   // Build output
   StringBuilder* sb = new_builder(1024);
-  fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
+  // fori(arrlen(pre_stencils)) { printf("%s\n", pre_stencils[i].name); }
 
   // generate our generation file...
   add_to(sb, "#include \"stddef.h\"\n");

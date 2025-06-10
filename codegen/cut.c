@@ -41,7 +41,7 @@ int main() {
   // Check all stencils and save hole locations
   fori(num_stencils) {
     StencilData* s = &stencils[i];
-    printf("Stencil %s code size: %d\n", s->name, s->stencil.code_size);
+    // printf("Stencil %s code size: %d\n", s->name, s->stencil.code_size);
 
     uint8_t *func_ptr = (uint8_t *)s->code;
 
@@ -58,12 +58,10 @@ int main() {
 	  s->stencil.holes_32[j] = i |= 0x80;
           holes_found_32++;
         } else if ((*val)+1 == small_holes[j]) {
-	  puts("bam");
           dprintf("    -- Found 32 bit INCREMENTED hole %d at index %ld\n", j, i);
 	  s->stencil.holes_32[j] = i |= 0x40;
           holes_found_32++;
         } else if (*(val-1) == small_holes[j]+1) {
-	  puts("bam");
           dprintf("    -- Found 32 bit DECREMENTED hole %d at index %ld\n", j, i);
 	  s->stencil.holes_32[j] = i |= 0x20;
           holes_found_32++;
@@ -101,8 +99,8 @@ int main() {
     StencilData *s = &stencils[i];
     s->stencil.index = index;
 
-    printf("%d %d %d %d\n", s->stencil.opcode, s->stencil.arg1_kind, s->stencil.arg2_kind, s->stencil.pass_through_count);
-    printf(" index: %d code_size: %d\n", index, s->stencil.code_size);
+    //printf("%d %d %d %d\n", s->stencil.opcode, s->stencil.arg1_kind, s->stencil.arg2_kind, s->stencil.pass_through_count);
+    //printf(" index: %d code_size: %d\n", index, s->stencil.code_size);
     fwrite(s->code, s->stencil.code_size, 1, code_file);
     index += s->stencil.code_size;
   }

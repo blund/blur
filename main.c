@@ -28,53 +28,37 @@ void final(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
 
+typedef int (*Fn)(uintptr_t);
+
 int main() {
   dprintf("\n [ Running Compiler ]\n");
-  CompileContext cc;
-  cc.mem = make_executable_memory();
-  cc.final = &final;
-  cc.stencils = NULL;
+   CopyPatchContext ctx =
+      make_context("generated/index.bin", "generated/code_blob.bin");
 
-  CallSignature add_cs = {"add", {ARG_REG, ARG_IMM}};
-  hmput(cc.stencils, add_cs, read_stencil("generated/stencils/add_const.bin"));
+  ctx.final = final;
 
-  CallSignature if_cs = {"if", {ARG_REG, ARG_REG}};
-  hmput(cc.stencils, if_cs,  read_stencil("generated/stencils/if_test.bin"));
-
-  CallSignature stack_write_cs = {"stack_write", {ARG_IMM}};
-  hmput(cc.stencils, stack_write_cs, read_stencil("generated/stencils/stack_write_imm.bin"));
-
-  CallSignature stack_read_cs = {"stack_read", {ARG_IMM}};
-  hmput(cc.stencils, stack_read_cs, read_stencil("generated/stencils/stack_read_imm.bin"));
-
-  // Build example AST to compile
-  dprintf("\n -- Building AST\n");
   Block *b = example_ast();
   traverse_block(b, print_ast, &(TraverseCtx){.traversal=pre_order, .data=0});
 
-  // Construct continuation passing style graph of our ast
-  dprintf("\n -- Constructng IR \n");
   IrNode *n = transform_ast(b);
   print_ir(n);
 
-  // Do the magic
-  dprintf("\n -- Compiling\n");
-  copy_and_patch(n, &cc);
+  copy_and_patch(n, &ctx);
 
-  // Execute the compiled code
-  dprintf(" -- Running code\n");
-  int stack_[1024];
-  uintptr_t stack = (uintptr_t)&stack;
-  void (*func)(uintptr_t, int) = (void (*)(uintptr_t, int))cc.mem.code;
-  func(stack, 0);
-  
+  uintptr_t stack[32] = {0};
+  Fn fn = (Fn)ctx.mem.code;
+
+  fn((uintptr_t)stack);
+
+
   return 0;
 }
 
 Block* example_ast() {
-  return block(let("test", type("int"), integer(2)),
+  return block(
+	       let("test", type("int"), integer(3)),
                if_test(integer(0),
                        block(call("add", args(identifier("test"), integer(4)))),
-                       block(call("add", args(identifier("test"), integer(7))))));
+                       block(call("add", args(identifier("test"), integer(8))))));
 }
 
