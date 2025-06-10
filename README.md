@@ -17,7 +17,8 @@ This includes instruction set architechtures (ISAs) and calling conventions.
 ## Running
 To try out the system, simply type
 ```
-make
+make gen
+make run
 ```
 
 This should generate stencils, compile them to machine code and execute the `blur` executable. This executable compiles a simple program using copy-and-patch at runtime, and executes it from memory.
