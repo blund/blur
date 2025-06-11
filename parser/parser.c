@@ -115,24 +115,34 @@ void parse_expr(ParseContext *ctx) {
 }
 
 void parse_call(ParseContext *ctx) {
+  char* old_head = ctx->head;
+
   parse_identifier(ctx);
   then(parse_exact("(", ctx));
   then(parse_expr(ctx));
   then(parse_exact(",", ctx));
   then(parse_expr(ctx));
   then(parse_exact(")", ctx));
+
+  ctx->old_head = old_head;
 }
 
 void parse_let(ParseContext *ctx) {
+  char* old_head = ctx->head;
+
   parse_type(ctx);
   then(parse_identifier(ctx));
   then(parse_exact("=", ctx));
   then(parse_integer(ctx));
   then(parse_exact(";", ctx));
+
+  ctx->old_head = old_head;
 }
 
 void parse_block(ParseContext *ctx);
 void parse_if(ParseContext *ctx) {
+  char *old_head = ctx->head;
+
   parse_exact("if", ctx);
   then(parse_exact("(", ctx));
   then(parse_expr(ctx));
@@ -140,6 +150,8 @@ void parse_if(ParseContext *ctx) {
   then(parse_block(ctx));
   then(parse_exact("else", ctx));
   then(parse_block(ctx));
+
+  ctx->old_head = old_head;
 }
 
 void parse_statement(ParseContext *ctx) {
@@ -150,7 +162,6 @@ void parse_statement(ParseContext *ctx) {
   or(parse_let(ctx));
   then(parse_exact(";", ctx));
   then(return);
-
 
   or(parse_if(ctx));
 }
@@ -167,7 +178,7 @@ int main() {
 
   ParseContext ctx = {.head = program, .indent = 0};
 
-  parse_if(&ctx);
+  parse_statement(&ctx);
 
   return ctx.result;
 
