@@ -13,12 +13,17 @@ typedef struct {
   char *head;
   char *old_head;
   ParseResult result;
+  int indent;
 } ParseContext;
 
 
 #define then(x) if (ctx->result == ParseSuccess) { x; }
 #define or(x)   if (ctx->result == ParseFail) { ctx->head = ctx->old_head; x;}
+#define some(x) while(ctx->result == ParseSuccess) { x; };
 
+void print_indent(ParseContext *ctx) {
+  for(int i = 0; i < ctx->indent; i++) printf(" ");
+}
 
 void parse_whitespace(ParseContext *ctx) {
   for (;;) {
@@ -61,6 +66,7 @@ void parse_num(ParseContext *ctx) {
     return;
   }
 
+  print_indent(ctx);
   printf("%.*s\n", length, ctx->old_head);
   ctx->result = ParseSuccess;
 
@@ -83,6 +89,7 @@ void parse_alph(ParseContext *ctx) {
     return;
   }
 
+  print_indent(ctx);
   printf("%.*s\n", length, ctx->old_head);
   ctx->result = ParseSuccess;
 
@@ -124,22 +131,43 @@ void parse_let(ParseContext *ctx) {
   then(parse_exact(";", ctx));
 }
 
+void parse_block(ParseContext *ctx);
 void parse_if(ParseContext *ctx) {
   parse_exact("if", ctx);
   then(parse_exact("(", ctx));
   then(parse_expr(ctx));
   then(parse_exact(")", ctx));
+  then(parse_block(ctx));
+  then(parse_exact("else", ctx));
+  then(parse_block(ctx));
 }
 
-char *program = "int test = 3; if (0) {add(test, 4} {add(test, 8)}";
-char *add = "add(8, add(test, test))";
+void parse_statement(ParseContext *ctx) {
+  parse_call(ctx);
+  then(parse_exact(";", ctx));
+  then(return);
+
+  or(parse_let(ctx));
+  then(parse_exact(";", ctx));
+  then(return);
+
+
+  or(parse_if(ctx));
+}
+
+void parse_block(ParseContext *ctx) {
+  parse_exact("{", ctx);
+  some(parse_statement(ctx));
+  parse_exact("}", ctx);
+}
+
+char *program = "if (0) { add(test, 4); yoing(doing, boink); } else { add(test, 8); }";
 
 int main() {
 
-  ParseContext ctx = {.head = add};
+  ParseContext ctx = {.head = program, .indent = 0};
 
-  // parse_exact(";", &ctx);
-  parse_call(&ctx);
+  parse_if(&ctx);
 
   return ctx.result;
 
