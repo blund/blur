@@ -14,6 +14,8 @@
 #include <ast/traverse.h>
 #include <ast/traversers.h>
 
+#include <parser/parser.h>
+
 #include <ir/ir.h>
 #include <ir/print.h>
 #include <ir/transform.h>
@@ -21,9 +23,8 @@
 #include <copy_and_patch/copy_and_patch.h>
 #include <copy_and_patch/stencil.h>
 
-Block *example_ast();
 
-// Functions used for testing cps functionlaity
+// Function used for testing cps functionlaity
 void final(uintptr_t stack, int result) {
   printf("From continuation passing: %d\n", result);
 }
@@ -32,12 +33,16 @@ typedef int (*Fn)(uintptr_t);
 
 int main() {
   dprintf("\n [ Running Compiler ]\n");
-   CopyPatchContext ctx =
-      make_context("generated/index.bin", "generated/code_blob.bin");
+
+  CopyPatchContext ctx = make_context("generated/index.bin",
+                                      "generated/code_blob.bin");
 
   ctx.final = final;
 
-  Block *b = example_ast();
+  char *program = "{ let test = 3; if (1) { add(2,3); } { mul(4, 5); } }";
+
+  Block *b = parse(program);
+
   traverse_block(b, print_ast, &(TraverseCtx){.traversal=pre_order, .data=0});
 
   IrNode *n = transform_ast(b);
@@ -50,15 +55,5 @@ int main() {
 
   fn((uintptr_t)stack);
 
-
   return 0;
 }
-
-Block* example_ast() {
-  return block(
-	       let("test", type("int"), integer(3)),
-               if_test(integer(0),
-                       block(call("add", args(identifier("test"), integer(4)))),
-                       block(call("add", args(identifier("test"), integer(8))))));
-}
-

@@ -5,11 +5,17 @@
 #include <ast/ast.h>
 #include <ast/build.h>
 
-Block *block_multi(int count, ...) {
-  static int counter = 0;
+Block *block_empty() {
   Block *b = malloc(sizeof(Block));
   b->node_type = block_node;
   b->statements = NULL;
+
+  return b;
+}
+
+Block *block_multi(int count, ...) {
+  static int counter = 0;
+  Block* b = block_empty();
 
   va_list args;
   va_start(args, count);
@@ -37,11 +43,17 @@ Parameters *params_multi(int count, ...) {
   return p;
 }
 
+Arguments *args_empty() {
+  Arguments *a = malloc(sizeof(Block));
+  a->node_type = args_node;
+  a->entries = NULL;
+
+  return a;
+}
+
 Arguments *args_multi(int count, ...) {
   static int counter = 0;
-  Arguments *p = malloc(sizeof(Block));
-  p->node_type = args_node;
-  p->entries = NULL;
+  Arguments *p = args_empty();
 
   va_list args;
   va_start(args, count);
@@ -54,13 +66,18 @@ Arguments *args_multi(int count, ...) {
 }
 
 
-Type type(char *name) {
-  Type v = {.node_type = type_node, .name = name};
+Type* type(char *name) {
+  Type* v = malloc(sizeof(Type));
+  v->node_type = type_node;
+  v->name = name;
   return v;
 }
 
-Var var(char *name, Type type) {
-  Var v = {.node_type = var_node, .name = name, .type = type};
+Var *var(char *name, Type type) {
+  Var *v = malloc(sizeof(Var));
+  v->node_type = var_node;
+  v->name = name;
+  v->type = type;
   return v;
 }
 
@@ -77,7 +94,7 @@ Statement *if_test(Expression* condition, Block *s1, Block* s2) {
   return s;
 }
 
-Statement *let(char* name, Type type ,Expression* e) {
+Statement *let(char* name, Type* type ,Expression* e) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
   s->kind = let_statement;

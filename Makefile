@@ -4,11 +4,11 @@
 cc=gcc -fno-toplevel-reorder -fno-align-functions
 
 # Enable debug printing for information about stencil building and cutting
-# debug=-DDEBUG
+debug=-DDEBUG
 
 # Run our actual "compiler"
 run:
-	@$(cc) -g -O2 -I. main.c copy_and_patch/*.c ast/*.c ir/*.c -lm -o blur
+	@$(cc) $(debug) -g -O2 -I. main.c parser/*.c ast/*.c ir/*.c copy_and_patch/*.c  -lm -o blur
 	@./blur
 
 gen:

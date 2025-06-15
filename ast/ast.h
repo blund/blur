@@ -102,7 +102,7 @@ typedef struct {
 
 typedef struct {
   NodeType node_type;
-  Type type;
+  Type* type;
   char *name;
   Expression *expr;
 } Let;
