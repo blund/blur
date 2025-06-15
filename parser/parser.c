@@ -1,41 +1,67 @@
 
-#include <string.h>
-#include <malloc.h>
+
+#include <stdio.h>
+
+#include <include/stb_ds.h>
 
 #include <ast/ast.h>
+#include <ast/build.h>
+#include <ast/traverse.h>
+#include <ast/traversers.h>
 
 typedef enum {
   ParseSuccess,
   ParseFail,
-} ParseResult;
+} ParseStatus;
+
 
 typedef struct {
   char *head;
-  char *old_head;
-  ParseResult result;
-  int indent;
+  ParseStatus status;
+  void* data;
 } ParseContext;
 
-
-#define then(x) if (ctx->result == ParseSuccess) { x; }
-#define or(x)   if (ctx->result == ParseFail) { ctx->head = ctx->old_head; x;}
-#define some(x) while(ctx->result == ParseSuccess) { x; };
-
-void print_indent(ParseContext *ctx) {
-  for(int i = 0; i < ctx->indent; i++) printf(" ");
+void parse_whitespace(ParseContext *ctx) {
+  while (*ctx->head == ' ' || *ctx->head == '\n' || *ctx->head == '\t') {
+    ctx->head++;
+  }
 }
 
-void parse_whitespace(ParseContext *ctx) {
-  for (;;) {
-    switch (*ctx->head) {
-    case ' ':
-    case '\n':
-    case '\t':
-      ctx->head++;
-    default:
-      ctx->result = ParseSuccess; return;
-    }
+char *parse_alpha(ParseContext *ctx) {
+  parse_whitespace(ctx);
+  ctx->status = ParseSuccess;
+
+  char* start = ctx->head;
+  int len = 0;
+  while (*ctx->head >= 'a' && *ctx->head <= 'z') {
+    ctx->head++;
+    len++;
   }
+
+  if (len == 0) {
+    ctx->status = ParseFail;
+    return 0;
+  }
+  
+  char *result = strndup(start, len+1);
+  result[len] = '\0';
+  return result;
+}
+
+int parse_num(ParseContext *ctx) {
+  parse_whitespace(ctx);
+  ctx->status = ParseSuccess;
+
+  char* start = ctx->head;
+  char* endptr;
+  long val = strtol(start, &endptr, 10);
+
+  if (endptr == start) {
+    ctx->status = ParseFail;
+    return 0;
+  }
+  ctx->head = endptr;
+  return val;
 }
 
 void parse_exact(char *this, ParseContext *ctx) {
@@ -44,142 +70,223 @@ void parse_exact(char *this, ParseContext *ctx) {
 
   if (strncmp(this, ctx->head, len) == 0) {
     ctx->head += len;
-    ctx->result = ParseSuccess;
+    ctx->status = ParseSuccess;
   } else {
-    ctx->result = ParseFail;
+    ctx->status = ParseFail;
   }
 }
-void parse_num(ParseContext *ctx) {
-  parse_whitespace(ctx);
 
-  ctx->old_head = ctx->head;
 
-  int length = 0;
-  while (*ctx->head >= '0' && *ctx->head <= '9') {
-    length++;
-    ctx->head++;
-    continue;
-  }
-
-  if (length == 0) {
-    ctx->result = ParseFail;
-    return;
-  }
-
-  print_indent(ctx);
-  printf("%.*s\n", length, ctx->old_head);
-  ctx->result = ParseSuccess;
-
-}
-
-void parse_alph(ParseContext *ctx) {
-  parse_whitespace(ctx);
-
-  ctx->old_head = ctx->head;
-
-  int length = 0;
-  while (*ctx->head >= 'a' && *ctx->head <= 'z') {
-    length++;
-    ctx->head++;
-    continue;
-  }
-
-  if (length == 0) {
-    ctx->result = ParseFail;
-    return;
-  }
-
-  print_indent(ctx);
-  printf("%.*s\n", length, ctx->old_head);
-  ctx->result = ParseSuccess;
-
-}
-
-void parse_type(ParseContext *ctx) {
-  parse_alph(ctx);
-}
-
-void parse_identifier(ParseContext *ctx) {
-  parse_alph(ctx);
-}
-
-void parse_integer(ParseContext *ctx) {
-  parse_num(ctx);
-}
-
-void parse_call(ParseContext* ctx);
-void parse_expr(ParseContext *ctx) {
-  parse_call(ctx);
-  or(parse_identifier(ctx));
-  or(parse_integer(ctx));
-}
-
-void parse_call(ParseContext *ctx) {
-  char* old_head = ctx->head;
-
-  parse_identifier(ctx);
-  then(parse_exact("(", ctx));
-  then(parse_expr(ctx));
-  then(parse_exact(",", ctx));
-  then(parse_expr(ctx));
-  then(parse_exact(")", ctx));
-
-  ctx->old_head = old_head;
-}
-
-void parse_let(ParseContext *ctx) {
-  char* old_head = ctx->head;
-
-  parse_type(ctx);
-  then(parse_identifier(ctx));
-  then(parse_exact("=", ctx));
-  then(parse_integer(ctx));
-  then(parse_exact(";", ctx));
-
-  ctx->old_head = old_head;
-}
-
-void parse_block(ParseContext *ctx);
-void parse_if(ParseContext *ctx) {
+Expression *parse_call_expr(ParseContext *ctx);
+Expression* parse_expr(ParseContext *ctx) {
   char *old_head = ctx->head;
 
+  // first we try to parse an integer:
+  int num = parse_num(ctx);
+  if (ctx->status == ParseSuccess) {
+    return integer(num);
+  }
+
+  // recover and try string
+  ctx->head = old_head;
+  Expression* call = parse_call_expr(ctx);
+  if (ctx->status == ParseSuccess) {
+    return call;
+  }
+
+
+  // recover and try string
+  ctx->head = old_head;
+  char* name = parse_alpha(ctx);
+  if (ctx->status == ParseSuccess) {
+    return identifier(name);
+  }
+
+  ctx->head = old_head;
+  ctx->status = ParseFail;
+  return 0;
+}
+
+Expression *parse_call_expr(ParseContext *ctx) {
+  // @TODO - we do big fat leaks
+
+  char *fun_name = parse_alpha(ctx);
+
+  parse_exact("(", ctx);
+  if (ctx->status == ParseFail) return 0;
+
+  Expression *arg1 = parse_expr(ctx);
+  if (ctx->status == ParseFail) return 0;
+
+  // Since we know we have an argument, try building up the arg list
+  Arguments *args = args_empty();
+  arrput(args->entries, arg1);
+
+  // Parse more args followed by a comma
+  for (;;) {
+    parse_exact(",", ctx);
+    if (ctx->status == ParseFail) break;
+
+    Expression* arg = parse_expr(ctx);
+    if (ctx->status == ParseFail) return 0;
+    arrput(args->entries, arg);
+  }
+
+  parse_exact(")", ctx);
+  if (ctx->status == ParseFail) return 0;
+
+  Expression* c = call_e(fun_name, args);
+  return c;
+}
+
+Statement *parse_call(ParseContext *ctx) {
+  // @TODO - we do big fat leaks
+
+  char *fun_name = parse_alpha(ctx);
+
+  parse_exact("(", ctx);
+  if (ctx->status == ParseFail) return 0;
+
+  Expression *arg1 = parse_expr(ctx);
+  if (ctx->status == ParseFail) return 0;
+
+  // Since we know we have an argument, try building up the arg list
+  Arguments *args = args_empty();
+  arrput(args->entries, arg1);
+
+  // Parse more args followed by a comma
+  for (;;) {
+    parse_exact(",", ctx);
+    if (ctx->status == ParseFail) break;
+
+    Expression* arg = parse_expr(ctx);
+    if (ctx->status == ParseFail) return 0;
+    arrput(args->entries, arg);
+  }
+
+  parse_exact(")", ctx);
+  if (ctx->status == ParseFail) return 0;
+
+  Statement* c = call(fun_name, args);
+  return c;
+}
+
+Statement *parse_let(ParseContext *ctx) {
+  char *type_name = parse_alpha(ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  char *var_name = parse_alpha(ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  parse_exact("=", ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  Expression* expr = parse_expr(ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  return let(var_name, type(type_name), expr);
+}
+
+
+Block *parse_block(ParseContext *ctx);
+Statement *parse_if(ParseContext *ctx) {
   parse_exact("if", ctx);
-  then(parse_exact("(", ctx));
-  then(parse_expr(ctx));
-  then(parse_exact(")", ctx));
-  then(parse_block(ctx));
-  then(parse_exact("else", ctx));
-  then(parse_block(ctx));
+  if (ctx->status == ParseFail)
+    return 0;
 
-  ctx->old_head = old_head;
+  parse_exact("(", ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  Expression* cond = parse_expr(ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  parse_exact(")", ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  Block* then_block = parse_block(ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  parse_exact("else", ctx);
+  char *old_head = ctx->head;
+  Block *else_block = parse_block(ctx);
+  if (ctx->status == ParseFail) {
+    // We put some extra safety net here. Not sure if it is needed
+    ctx->head = old_head;
+    ctx->status = ParseSuccess;
+  }
+
+  // It's ok if this last one fails :)
+
+  return if_test(cond, then_block, else_block);
 }
 
-void parse_statement(ParseContext *ctx) {
-  parse_call(ctx);
-  then(parse_exact(";", ctx));
-  then(return);
+Statement *parse_statement(ParseContext *ctx) {
+  char *old_head = ctx->head;
+  
+  Statement *if_test = parse_if(ctx);
+  if (ctx->status == ParseSuccess) {
+    return if_test;
+  }
 
-  or(parse_let(ctx));
-  then(parse_exact(";", ctx));
-  then(return);
+  ctx->head = old_head;
+  Statement *let = parse_let(ctx);
+  if (ctx->status == ParseSuccess) {
+    parse_exact(";", ctx);
+    if (ctx->status == ParseSuccess)
+      return let;
+  }
 
-  or(parse_if(ctx));
+  ctx->head = old_head;
+  Statement *call = parse_call(ctx);
+  if (ctx->status == ParseSuccess) {
+    parse_exact(";", ctx);
+    if (ctx->status == ParseSuccess)
+      return call;
+  }
+
+  ctx->status = ParseFail;
+  return 0;
 }
 
-void parse_block(ParseContext *ctx) {
+Block *parse_block(ParseContext *ctx) {
   parse_exact("{", ctx);
-  some(parse_statement(ctx));
+  if (ctx->status == ParseFail)
+    return 0;
+
+  Statement *s = parse_statement(ctx);
+  if (ctx->status == ParseFail) {
+    return 0;
+  }
+
+  Block *b = block_empty();
+  arrput(b->statements, s);
+
+  for (;;) {
+    Statement *s = parse_statement(ctx);
+    if (ctx->status == ParseFail) {
+      break;
+    }
+
+    arrput(b->statements, s);
+  }
+
   parse_exact("}", ctx);
+  if (ctx->status == ParseFail)
+    return 0;
+
+  return b;
 }
 
-char *program = "if (0) { add(test, 4); yoing(doing, boink); } else { add(test, 8); }";
+Block *parse(char *code) {
+  ParseContext ctx = {.head = code};
 
-int main() {
-
-  ParseContext ctx = {.head = program, .indent = 0};
-
-  parse_statement(&ctx);
-
-  return ctx.result;
-
+  return parse_block(&ctx);
 }
