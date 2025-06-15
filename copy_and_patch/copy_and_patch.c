@@ -106,6 +106,13 @@ typedef struct {
   StencilKey value;
 } CodeKeys;
 
+OpCode lookup_opcode(const char *name) {
+    for (int i = 0; op_table[i].name != NULL; i++) {
+        if (strcmp(op_table[i].name, name) == 0)
+            return op_table[i].opcode;
+    }
+    return OP_INIT; // @TODO - fix error handling here
+}
 
 // @TODO 04.06.25 - If you are feeling especially inspired, take a look at
 // removing jmps when n->cont == n->label+1, i.e. when we want to jump to
@@ -116,8 +123,6 @@ typedef struct {
 // and "cut" those bytes off the end. This though depends on the functions
 // not being aligned and having one of the many nops of the architeture,
 // which we currently get with zig cc.
-
-
 void copy_and_patch(IrNode *head, CopyPatchContext* ctx) {
   CodeLocation *l = 0;
   CodeKeys *ck = 0;
@@ -129,13 +134,43 @@ void copy_and_patch(IrNode *head, CopyPatchContext* ctx) {
     case IR_CALL: {
       IrCall *c = &n->call_node;
 
-      StencilKey sk = {ADD_OP,VAR_ARG,LIT_ARG, 0};
-      uint8_t *add_loc = copy_stencil(sk, ctx);
+      IrLiteral l1 = c->args[0];
+      IrLiteral l2 = c->args[1];
 
-      patch_hole_32(add_loc, sk, 0, c->args[0].var.index*4, ctx);
-      patch_hole_32(add_loc, sk, 1, c->args[1].integer, ctx);
 
-      hmput(l,  n->label, add_loc);
+      OpCode opcode = lookup_opcode(c->func);
+
+      ArgumentKind a1, a2;
+      uint32_t v1, v2;
+
+
+      if (l1.kind == IR_LITERAL_INTEGER) {
+        a1 = LIT_ARG;
+	v1 = l1.integer;
+      }
+
+      if (l1.kind == IR_LITERAL_VAR) {
+        a1 = VAR_ARG;
+	v1 = l1.var.index*4;
+      }
+      if (l2.kind == IR_LITERAL_INTEGER) {
+        a2 = LIT_ARG;
+	v2 = l2.integer;
+      }
+
+      if (l2.kind == IR_LITERAL_VAR) {
+        a2 = VAR_ARG;
+	v2 = l2.var.index*4;
+      }
+
+      StencilKey sk = {opcode,a1,a2, 0};
+      uint8_t *code_loc = copy_stencil(sk, ctx);
+      assert(code_loc != 0);
+
+      patch_hole_32(code_loc, sk, 0, v1, ctx);
+      patch_hole_32(code_loc, sk, 1, v2, ctx);
+
+      hmput(l,  n->label, code_loc);
       hmput(ck, n->label, sk);
       break;
     }
