@@ -66,18 +66,18 @@ Arguments *args_multi(int count, ...) {
 }
 
 
-Type* type(char *name) {
-  Type* v = malloc(sizeof(Type));
-  v->node_type = type_node;
-  v->name = name;
+Type type(char *name) {
+  Type v;
+  v.node_type = type_node;
+  v.name = name;
   return v;
 }
 
-Var *var(char *name, Type type) {
-  Var *v = malloc(sizeof(Var));
-  v->node_type = var_node;
-  v->name = name;
-  v->type = type;
+Var var(char *name, Type type) {
+  Var v;
+  v.node_type = var_node;
+  v.name = name;
+  v.type = type;
   return v;
 }
 
@@ -94,7 +94,7 @@ Statement *if_test(Expression* condition, Block *s1, Block* s2) {
   return s;
 }
 
-Statement *let(char* name, Type* type ,Expression* e) {
+Statement *let(char* name, Type type ,Expression* e) {
   Statement *s = malloc(sizeof(Statement));
   s->node_type = statement_node;
   s->kind = let_statement;

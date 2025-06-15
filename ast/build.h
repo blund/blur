@@ -17,13 +17,13 @@ Parameters *params_multi(int count, ...);
 Arguments *args_multi(int count, ...);
 Arguments *args_empty();
 Statement *if_test(Expression* condition, Block *s1, Block* s2);
-Statement *let(char* name, Type* type, Expression* e);
+Statement *let(char* name, Type type, Expression* e);
 Statement *call(char* name, Arguments *args);
 Expression *call_e(char* name, Arguments *args);
 Expression *identifier(char* name);
 Expression *integer(int n);
 FuncDecl *func_decl(Type ret, char* name, Parameters *params, Block* body);
-Var* var(char *name, Type type);
-Type* type(char *name);
+Var var(char *name, Type type);
+Type type(char *name);
 
 #endif

@@ -51,7 +51,7 @@ void traverse_type(Type *t, Visit v, TraverseCtx *ctx) {
 
 void traverse_let(Let *a, Visit v, TraverseCtx* ctx) {
   v(a->node_type, a, ctx, pre_order);
-  traverse_type(a->type, v, ctx);
+  traverse_type(&a->type, v, ctx);
   traverse_expr(a->expr, v, ctx);
   v(a->node_type, a, ctx,post_order);
 }
