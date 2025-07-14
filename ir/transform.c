@@ -82,11 +82,11 @@ IrNode *emit_return(const char *value) {
   return n;
 }
 
-IrNode *emit_call(char *func, IrLiteral *args, int arg_count, int cont) {
+IrNode *emit_call(char *func) {
   IrNode *n = new_node(IR_CALL);
   n->call_node = (IrCall){
-    .func = func, .args = args, .arg_count = arg_count, .has_ret = 0,
-    .cont = cont
+    .func = func, .args = (IrLiteral*)-1, .arg_count = -1, .has_ret = -1,
+    .cont = -1
   };
   return n;
 }
@@ -169,10 +169,13 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
   case call_expr: {
     int new_label;
     Call *call = &expr->call;
-    IrLiteral *args = transform_args(call->args, cont_label, &new_label);
+    // args, arrlen(call->args->entries), 
     IrNode *n =
-      emit_call_var(call->name, args, arrlen(call->args->entries), target_var, new_label);
-
+      emit_call_var(call->name, 0,0, target_var, new_label);
+    IrLiteral *args = transform_args(call->args, cont_label, &new_label);
+    n->call_node.args = args;
+    n->call_node.arg_count = arrlen(call->args->entries);
+    n->call_node.cont = new_label;
     printf("emitting %s\n", call->name);
     return n;
   }
@@ -192,8 +195,11 @@ int transform_statement(Statement *stmt, int cont_label) {
   case call_statement: {
     int new_label;
     Call *call = &stmt->call;
+    IrNode *n = emit_call(call->name);
     IrLiteral *args = transform_args(call->args, cont_label, &new_label);
-    IrNode *n = emit_call(call->name, args, arrlen(call->args->entries), new_label);
+    n->call_node.args = args;
+    n->call_node.arg_count = arrlen(call->args->entries);
+    n->call_node.cont = new_label;
     printf("emitting %s\n", call->name);
     return n->label;
   }
