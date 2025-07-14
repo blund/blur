@@ -151,11 +151,7 @@ IrLiteral *transform_args(Arguments *arguments, int cont_label,
       node->kind = IR_LITERAL_VAR;
       node->var = tmp;
       IrNode *call_node = transform_expr(arg, tmp, label);
-      node->var = call_node->call_node.ret;
       label = call_node->label;
-      // args[i] = *call_node;
-      // we need to emit this node..
-      // TODO
     }
   }
 
@@ -174,10 +170,8 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
     int new_label;
     Call *call = &expr->call;
     IrLiteral *args = transform_args(call->args, cont_label, &new_label);
-
-    IrVar result = new_tmp();
     IrNode *n =
-      emit_call_var(call->name, args, arrlen(call->args->entries), result, new_label);
+      emit_call_var(call->name, args, arrlen(call->args->entries), target_var, new_label);
 
     printf("emitting %s\n", call->name);
     return n;
