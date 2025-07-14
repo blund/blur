@@ -17,7 +17,7 @@ void print_literal(IrLiteral *lit) {
     dprintf("%d", lit->integer);
     break;
   case IR_LITERAL_VAR:
-    dprintf("%s{idx:%d}", lit->var.name, lit->var.index);
+    dprintf("[%d]", /*lit->var.name,*/ lit->var.index);
     break;
   default:
     dprintf("<?>");
@@ -32,7 +32,7 @@ void print_ir(IrNode *head) {
     switch (n->kind) {
     case IR_LET: {
       IrLet *let = &n->let_node;
-      dprintf("let %s{idx:%d} = ", let->var.name, let->var.index);
+      dprintf("let [%d] = ", /*let->var.name, */let->var.index);
       print_literal(&let->value);
       dprintf(" → L%d\n", let->cont);
       break;
@@ -40,7 +40,11 @@ void print_ir(IrNode *head) {
 
     case IR_CALL: {
       IrCall *call = &n->call_node;
-      dprintf("call %s(", call->func);
+      if (call->has_ret) {
+	dprintf("let [%d] = %s(", /*let->var.name, */call->ret.index, call->func);
+      } else {
+        dprintf("call %s(", call->func);
+      }
       for (int i = 0; i < call->arg_count; ++i) {
 	print_literal(&call->args[i]);
 	if (i < call->arg_count - 1) dprintf(", ");

@@ -82,16 +82,25 @@ IrNode *emit_return(const char *value) {
   return n;
 }
 
-IrNode *emit_call(char *func, IrLiteral* args, int arg_count, int cont) {
+IrNode *emit_call(char *func, IrLiteral *args, int arg_count, int cont) {
   IrNode *n = new_node(IR_CALL);
   n->call_node = (IrCall){
-    .func = func,
-    .args = args,
-    .arg_count = arg_count,
+    .func = func, .args = args, .arg_count = arg_count, .has_ret = 0,
     .cont = cont
   };
   return n;
 }
+
+IrNode *emit_call_var(char *func, IrLiteral *args, int arg_count, IrVar ret, int cont) {
+  IrNode *n = new_node(IR_CALL);
+  n->call_node = (IrCall){
+    .func = func, .args = args, .arg_count = arg_count, .has_ret = 1, .ret = ret,
+    .cont = cont
+  };
+  return n;
+}
+
+
 
 int transform_block(Block *block, int cont_label) {
   for (int i = arrlen(block->statements) - 1; i >= 0; --i) {
@@ -117,25 +126,36 @@ IrLiteral to_ir(Expression *e) {
 
 IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label);
 IrLiteral *transform_args(Arguments *arguments, int cont_label,
-                           int *out_label) {
+                          int *out_label) {
+  int count = arrlen(arguments->entries);
   IrLiteral *args = malloc(sizeof(IrLiteral) * arrlen(arguments->entries));
   int label = cont_label;
 
-  for (int i = arrlen(arguments->entries) - 1; i >= 0; --i) {
+  for (int i = count-1; i >= 0; --i) {
     Expression *arg = arguments->entries[i];
+    IrLiteral *node = &args[i];
 
     if (arg->kind == lit_expr && arg->lit.kind == integer_lit) {
-      args[i].kind = IR_LITERAL_INTEGER;
-      args[i].integer = arg->lit.integer;
+      // Integer
+      node->kind = IR_LITERAL_INTEGER;
+      node->integer = arg->lit.integer;
+
     } else if (arg->kind == lit_expr && arg->lit.kind == identifier_lit) {
-      IrVar var;
-      args[i].kind = IR_LITERAL_VAR;
-      args[i].var = from_name(arg->lit.identifier);
+      // Literal
+      IrVar* var = &node->var;
+      node->kind = IR_LITERAL_VAR;
+      node->var = from_name(arg->lit.identifier);
     } else {
+      // Function call!
       IrVar tmp = new_tmp();
-      label = transform_expr(arg, tmp, label)->label;
-      args[i].kind = IR_LITERAL_VAR;
-      args[i].var = tmp;
+      node->kind = IR_LITERAL_VAR;
+      node->var = tmp;
+      IrNode *call_node = transform_expr(arg, tmp, label);
+      node->var = call_node->call_node.ret;
+      label = call_node->label;
+      // args[i] = *call_node;
+      // we need to emit this node..
+      // TODO
     }
   }
 
@@ -154,7 +174,12 @@ IrNode *transform_expr(Expression *expr, IrVar target_var, int cont_label) {
     int new_label;
     Call *call = &expr->call;
     IrLiteral *args = transform_args(call->args, cont_label, &new_label);
-    IrNode *n = emit_call(call->name, args, arrlen(call->args->entries), new_label);
+
+    IrVar result = new_tmp();
+    IrNode *n =
+      emit_call_var(call->name, args, arrlen(call->args->entries), result, new_label);
+
+    printf("emitting %s\n", call->name);
     return n;
   }
 
@@ -175,6 +200,7 @@ int transform_statement(Statement *stmt, int cont_label) {
     Call *call = &stmt->call;
     IrLiteral *args = transform_args(call->args, cont_label, &new_label);
     IrNode *n = emit_call(call->name, args, arrlen(call->args->entries), new_label);
+    printf("emitting %s\n", call->name);
     return n->label;
   }
 
