@@ -38,6 +38,30 @@ typedef enum {
   SREAD_OP,
 } OpCode;
 
+typedef struct {
+    const char *name;
+    OpCode opcode;
+} OpMap;
+
+static const OpMap op_table[] = {
+    {"add",     ADD_OP},
+    {"sub",     SUB_OP},
+    {"mul",     MUL_OP},
+    {"div",     DIV_OP},
+    {"or",      OR_OP},
+    {"and",     AND_OP},
+    {"lt",      LT_OP},
+    {"le",      LE_OP},
+    {"gt",      GT_OP},
+    {"ge",      GE_OP},
+    {"neq",     NEQ_OP},
+    {"if",      IF_OP},
+    {"swrite",  SWRITE_OP},
+    {"sread",   SREAD_OP},
+    // Sentinel
+    {0,      OP_INIT}
+};
+
 typedef enum {
   ARG_INIT = -1,
   REG_ARG  = 0, // Passed in register

@@ -39,7 +39,7 @@ int main() {
 
   ctx.final = final;
 
-  char *program = "{ let test = 3; if (1) { add(2,3); } { mul(4, 5); } }";
+  char *program = "{ let test = 3; if (0) { add(test,3); } { mul(test, 5); } }";
 
   Block *b = parse(program);
 

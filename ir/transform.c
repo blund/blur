@@ -20,14 +20,13 @@ VarSlot *var_slots = NULL;
 int next_stack_index = 0;
 
 int stack_index(const char *name) {
-  VarSlot *found = hmgetp_null(var_slots, name);
-  if (found) {
-    return found->value;
-  } else {
+  VarSlot *found = shgetp_null(var_slots, name);
+  if (!found) {
     int idx = next_stack_index++;
-    hmput(var_slots, name, idx);
+    shput(var_slots, name, idx);
     return idx;
   }
+  return found->value;
 }
 
 int new_label() {
