@@ -52,7 +52,8 @@ typedef struct {
   char *func;
   IrLiteral* args;
   int arg_count;
-  // int result_index;
+  IrVar ret;
+  int has_ret;
   int cont;
 } IrCall;
 

@@ -38,8 +38,8 @@ int main() {
                                       "generated/code_blob.bin");
 
   ctx.final = final;
-
-  char *program = "{ let test = 3; if (0) { add(test,3); } { mul(test, 5); } }";
+  //char *program = "{ let test = 3; if (2) {add(2, test);} {mul(2, test);} }";
+  char *program = "{ let test = 3; add(test, mul(test, sub(test, 2))); }";
 
   Block *b = parse(program);
 
@@ -49,7 +49,6 @@ int main() {
   print_ir(n);
 
   copy_and_patch(n, &ctx);
-
   uintptr_t stack[32] = {0};
   Fn fn = (Fn)ctx.mem.code;
 
