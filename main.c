@@ -38,7 +38,8 @@ int main() {
                                       "generated/code_blob.bin");
 
   ctx.final = final;
-  char *program = "{ let test = 3; add(test, mul(test, sub(test, 2), 2)); }";
+  //char *program = "{ let test = 3; if (2) {add(2, test);} {mul(2, test);} }";
+  char *program = "{ let test = 3; add(test, mul(test, sub(test, 2))); }";
 
   Block *b = parse(program);
 

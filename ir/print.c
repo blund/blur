@@ -63,7 +63,7 @@ void print_ir(IrNode *head) {
     }
 
     case IR_RETURN: {
-      dprintf("return %s\n", n->return_node.value);
+      dprintf("return\n");
       break;
     }
 
